@@ -1,0 +1,23 @@
+# Configurazione applicazione - OIDC SSO
+# Nota: usare variabili d'ambiente per non committare segreti
+
+server:
+  # Porta configurabile; default 8080 utile in locale
+  port: ${SERVER_PORT:8080}
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          company:
+            client-id: ${OIDC_CLIENT_ID}
+            client-secret: ${OIDC_CLIENT_SECRET}
+            scope:
+              - openid
+              - profile
+              - email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          company:
+            issuer-uri: ${OIDC_ISSUER_URI}
