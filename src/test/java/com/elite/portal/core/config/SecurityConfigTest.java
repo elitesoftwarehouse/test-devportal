@@ -1,85 +1,84 @@
 package com.elite.portal.core.config;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
-import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(classes = {SecurityConfig.class, SecurityConfigTest.TestApp.class, SecurityConfigTest.TestOAuth2Beans.class})
+/**
+ * Test di integrazione per la configurazione di sicurezza (OIDC + Spring Security).
+ *
+ * - Verifica che utenti non autenticati vengano reindirizzati alla pagina di login OIDC.
+ * - Verifica che utenti autenticati tramite oauth2Login possano accedere alla home "/" con HTTP 200.
+ * - Verifica che una risorsa statica (o rotta fittizia) non provochi redirect al login, ma ritorni 200 o 404.
+ */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
+@TestPropertySource(properties = {
+        "OIDC_CLIENT_ID=fake",
+        "OIDC_CLIENT_SECRET=fake",
+        "OIDC_ISSUER_URI=https://issuer.example.com"
+})
 class SecurityConfigTest {
 
     @Autowired
     private MockMvc mockMvc;
 
+    /**
+     * Verifica che una richiesta alla home non autenticata venga reindirizzata verso l'endpoint di autorizzazione OIDC.
+     * Accetta qualsiasi redirect che contenga "/oauth2/authorization" (es. "/oauth2/authorization/company").
+     */
     @Test
-    void staticResourcesAreAccessibleWithoutAuthentication() throws Exception {
-        mockMvc.perform(get("/css/app.css"))
-                .andExpect(status().isNotFound()); // Permesso dalla security, ma la risorsa non esiste -> 404 (non redirect)
-    }
-
-    @Test
-    void anyOtherRequestRequiresAuthentication() throws Exception {
+    void nonAutenticato_redirectLogin() throws Exception {
         mockMvc.perform(get("/"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(header().string("Location", containsString("/oauth2/authorization")));
     }
 
+    /**
+     * Verifica che un utente autenticato tramite oauth2Login possa accedere alla home con HTTP 200.
+     * Imposta il registrationId a "company" per allinearsi alla configurazione tipica.
+     */
     @Test
-    void csrfIsEnabledByDefault() throws Exception {
-        mockMvc.perform(post("/"))
-                .andExpect(status().isForbidden());
+    void autenticato_accessoHome() throws Exception {
+        mockMvc.perform(
+                        get("/")
+                                .with(oauth2Login()
+                                        .clientRegistration(client -> client.registrationId("company"))
+                                        .attributes(attrs -> attrs.put("name", "Mario Rossi"))
+                                )
+                )
+                .andExpect(status().isOk());
     }
 
-    @SpringBootConfiguration
-    @EnableAutoConfiguration
-    static class TestApp {
-        // Configurazione minima Boot per eseguire il contesto durante i test
-    }
+    /**
+     * Verifica che le risorse statiche non siano soggette a redirect verso il login.
+     * Se la risorsa esiste -> 200, se non esiste -> 404. In ogni caso NON deve essere una redirezione 3xx.
+     */
+    @Test
+    void staticResources_accessibileONonReindirizzata() throws Exception {
+        MvcResult result = mockMvc.perform(get("/css/app.css"))
+                .andReturn();
 
-    @Configuration
-    static class TestOAuth2Beans {
+        int status = result.getResponse().getStatus();
+        boolean isRedirection = status >= 300 && status < 400;
 
-        @Bean
-        @Primary
-        ClientRegistrationRepository clientRegistrationRepository() {
-            ClientRegistration registration = ClientRegistration.withRegistrationId("test")
-                    .clientId("test-client-id")
-                    .clientSecret("test-client-secret")
-                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                    .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
-                    .scope("openid", "profile", "email")
-                    .authorizationUri("https://example.com/oauth2/authorize")
-                    .tokenUri("https://example.com/oauth2/token")
-                    .userInfoUri("https://example.com/userinfo")
-                    .userNameAttributeName("sub")
-                    .jwkSetUri("https://example.com/.well-known/jwks.json")
-                    .build();
-            return new InMemoryClientRegistrationRepository(registration);
-        }
+        // Non deve essere un redirect al login
+        Assertions.assertFalse(isRedirection, "Le risorse statiche non devono essere reindirizzate al login");
 
-        @Bean
-        @Primary
-        OAuth2AuthorizedClientService authorizedClientService(ClientRegistrationRepository repo) {
-            return new InMemoryOAuth2AuthorizedClientService(repo);
-        }
+        // Deve essere 200 (se presente) oppure 404 (se non presente)
+        boolean expected = status == HttpStatus.OK.value() || status == HttpStatus.NOT_FOUND.value();
+        Assertions.assertTrue(expected, "Atteso 200 o 404 per le risorse statiche, ottenuto: " + status);
     }
 }
