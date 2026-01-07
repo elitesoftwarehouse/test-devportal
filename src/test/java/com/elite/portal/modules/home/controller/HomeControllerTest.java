@@ -1,162 +1,98 @@
 package com.elite.portal.modules.home.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+class HomeControllerTest {
 
-public class HomeControllerTest {
+    private final HomeController controller = new HomeController();
 
     @Test
     void index_withOidcUser_fullName() {
-        HomeController controller = new HomeController();
-        Model model = new ExtendedModelMap();
-
-        OidcUser oidcUser = Mockito.mock(OidcUser.class);
-        Mockito.when(oidcUser.getFullName()).thenReturn("Mario Rossi");
-
-        String view = controller.index(model, oidcUser);
-
-        assertEquals("home/index", view);
-        assertEquals("Mario Rossi", model.getAttribute("displayName"));
-    }
-
-    @Test
-    void index_withOidcUser_nameClaim() {
-        HomeController controller = new HomeController();
-        Model model = new ExtendedModelMap();
-
-        OidcUser oidcUser = Mockito.mock(OidcUser.class);
-        Mockito.when(oidcUser.getFullName()).thenReturn(null);
         Map<String, Object> claims = new HashMap<>();
-        claims.put("name", "Claudio Verdi");
-        Mockito.when(oidcUser.getClaims()).thenReturn(claims);
-        Mockito.when(oidcUser.getEmail()).thenReturn(null);
-        Mockito.when(oidcUser.getPreferredUsername()).thenReturn(null);
+        claims.put("sub", "123");
+        claims.put("name", "Mario Rossi");
+        claims.put("email", "mario.rossi@example.com");
 
+        OidcUser oidcUser = buildOidcUser(claims);
+
+        Model model = new ExtendedModelMap();
         String view = controller.index(model, oidcUser);
 
-        assertEquals("home/index", view);
-        assertEquals("Claudio Verdi", model.getAttribute("displayName"));
+        assertThat(view).isEqualTo("home/index");
+        assertThat(model.getAttribute("displayName")).isEqualTo("Mario Rossi");
     }
 
     @Test
     void index_withOidcUser_emailFallback() {
-        HomeController controller = new HomeController();
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("sub", "abc");
+        claims.put("email", "utente@example.com");
+
+        OidcUser oidcUser = buildOidcUser(claims);
+
         Model model = new ExtendedModelMap();
-
-        OidcUser oidcUser = Mockito.mock(OidcUser.class);
-        Mockito.when(oidcUser.getFullName()).thenReturn(null);
-        Mockito.when(oidcUser.getClaims()).thenReturn(Collections.emptyMap());
-        Mockito.when(oidcUser.getEmail()).thenReturn("user@example.com");
-        Mockito.when(oidcUser.getPreferredUsername()).thenReturn(null);
-
         String view = controller.index(model, oidcUser);
 
-        assertEquals("home/index", view);
-        assertEquals("user@example.com", model.getAttribute("displayName"));
+        assertThat(view).isEqualTo("home/index");
+        assertThat(model.getAttribute("displayName")).isEqualTo("utente@example.com");
     }
 
     @Test
-    void index_withOidcUser_preferredUsernameFallback() {
-        HomeController controller = new HomeController();
+    void index_withOAuth2User_preferredUsernameFallback() {
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("preferred_username", "m.rossi");
+        // intentionally no "name" and no "email"
+
+        OAuth2User oauth2User = new DefaultOAuth2User(
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")),
+                attributes,
+                "preferred_username");
+
         Model model = new ExtendedModelMap();
-
-        OidcUser oidcUser = Mockito.mock(OidcUser.class);
-        Mockito.when(oidcUser.getFullName()).thenReturn(null);
-        Mockito.when(oidcUser.getClaims()).thenReturn(Collections.emptyMap());
-        Mockito.when(oidcUser.getEmail()).thenReturn(null);
-        Mockito.when(oidcUser.getPreferredUsername()).thenReturn("user123");
-
-        String view = controller.index(model, oidcUser);
-
-        assertEquals("home/index", view);
-        assertEquals("user123", model.getAttribute("displayName"));
-    }
-
-    @Test
-    void index_withOAuth2User_attributesName() {
-        HomeController controller = new HomeController();
-        Model model = new ExtendedModelMap();
-
-        OAuth2User oauth2User = Mockito.mock(OAuth2User.class);
-        Map<String, Object> attrs = new HashMap<>();
-        attrs.put("name", "Giulia Neri");
-        Mockito.when(oauth2User.getAttributes()).thenReturn(attrs);
-        Mockito.when(oauth2User.getName()).thenReturn("id-ignored");
-
         String view = controller.index(model, oauth2User);
 
-        assertEquals("home/index", view);
-        assertEquals("Giulia Neri", model.getAttribute("displayName"));
+        assertThat(view).isEqualTo("home/index");
+        assertThat(model.getAttribute("displayName")).isEqualTo("m.rossi");
     }
 
     @Test
-    void index_withOAuth2User_preferredUsername() {
-        HomeController controller = new HomeController();
+    void index_withNullPrincipal_usesGenericFallback() {
         Model model = new ExtendedModelMap();
-
-        OAuth2User oauth2User = Mockito.mock(OAuth2User.class);
-        Map<String, Object> attrs = new HashMap<>();
-        attrs.put("preferred_username", "g.neri");
-        Mockito.when(oauth2User.getAttributes()).thenReturn(attrs);
-        Mockito.when(oauth2User.getName()).thenReturn("id-ignored");
-
-        String view = controller.index(model, oauth2User);
-
-        assertEquals("home/index", view);
-        assertEquals("g.neri", model.getAttribute("displayName"));
-    }
-
-    @Test
-    void index_withOAuth2User_email() {
-        HomeController controller = new HomeController();
-        Model model = new ExtendedModelMap();
-
-        OAuth2User oauth2User = Mockito.mock(OAuth2User.class);
-        Map<String, Object> attrs = new HashMap<>();
-        attrs.put("email", "giulia.neri@example.com");
-        Mockito.when(oauth2User.getAttributes()).thenReturn(attrs);
-        Mockito.when(oauth2User.getName()).thenReturn("id-ignored");
-
-        String view = controller.index(model, oauth2User);
-
-        assertEquals("home/index", view);
-        assertEquals("giulia.neri@example.com", model.getAttribute("displayName"));
-    }
-
-    @Test
-    void index_withOAuth2User_fallbackGetName() {
-        HomeController controller = new HomeController();
-        Model model = new ExtendedModelMap();
-
-        OAuth2User oauth2User = Mockito.mock(OAuth2User.class);
-        Mockito.when(oauth2User.getAttributes()).thenReturn(Collections.emptyMap());
-        Mockito.when(oauth2User.getName()).thenReturn("principal-id-42");
-
-        String view = controller.index(model, oauth2User);
-
-        assertEquals("home/index", view);
-        assertEquals("principal-id-42", model.getAttribute("displayName"));
-    }
-
-    @Test
-    void index_withNullPrincipal_setsEmptyDisplayName() {
-        HomeController controller = new HomeController();
-        Model model = new ExtendedModelMap();
-
         String view = controller.index(model, null);
 
-        assertEquals("home/index", view);
-        assertEquals("", model.getAttribute("displayName"));
+        assertThat(view).isEqualTo("home/index");
+        assertThat(model.getAttribute("displayName")).isEqualTo("Utente");
+    }
+
+    private OidcUser buildOidcUser(Map<String, Object> claims) {
+        OidcIdToken idToken = new OidcIdToken(
+                "id-token",
+                Instant.now().minusSeconds(60),
+                Instant.now().plusSeconds(600),
+                claims
+        );
+        OidcUserInfo userInfo = new OidcUserInfo(claims);
+        return new DefaultOidcUser(
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")),
+                idToken,
+                userInfo,
+                "sub"
+        );
     }
 }
