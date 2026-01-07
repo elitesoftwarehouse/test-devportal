@@ -1,51 +1,51 @@
-# Elite Portal – SSO OIDC (Spring Security)
+# Elite Portal — SSO OIDC (Spring Security)
 
-Questa guida documenta come configurare l'autenticazione Single Sign-On (SSO) tramite OpenID Connect (OIDC) per Elite Portal, in linea con l'Epic "Identità e Accesso (SSO OIDC e RBAC)".
+Questo documento descrive come configurare ed eseguire il login SSO OIDC nell'applicazione, i prerequisiti richiesti e le linee guida di sicurezza.
 
-Obiettivo della User Story: l'utente deve potersi autenticare con il provider OIDC aziendale e vedere il proprio nome nella UI.
+Epic: Epic 1 — Identità e Accesso (SSO OIDC e RBAC)
+User Story: Login SSO OIDC con Spring Security e visualizzazione utente
 
+1) Panoramica funzionalità SSO OIDC
+- L'applicazione utilizza Spring Security (OAuth2 Client) per eseguire il login tramite un Identity Provider (IdP) compatibile OpenID Connect (OIDC).
+- Il flusso di autenticazione è Authorization Code (con PKCE se supportato dal provider).
+- Al termine del login, l'utente viene reindirizzato al portale e il suo nome (claim preferito, es. name) è mostrato nella UI.
+- In locale, il redirect URI è http://localhost:8080/login/oauth2/code/company (dove "company" è il registrationId usato nell'app).
 
-## Panoramica
-- Stack: Java 17, Spring Boot 2.7.x, Spring Security OAuth2 Client, Thymeleaf, Maven.
-- Flusso: OAuth 2.0 Authorization Code con OIDC.
-- Login: reindirizzamento al provider OIDC, callback su `/login/oauth2/code/{registrationId}`.
-- Visualizzazione utente: il nome dell'utente (es. claim `name` o `preferred_username`) è disponibile nel controller come `OidcUser` e mostrato nella UI.
+2) Prerequisiti
+- Un provider OIDC aziendale o di test (es. Keycloak, Okta, Azure AD, Auth0, Google) con:
+  - Issuer (issuer-uri) raggiungibile pubblicamente o in rete locale (per test).
+  - Client ID (confidential client) e Client Secret.
+  - Grant type: authorization_code
+  - Scopes consigliati: openid, profile, email
+- Consentire l'uso di http per localhost, se il provider lo richiede espressamente per ambienti di sviluppo.
 
-
-## Prerequisiti
-- Un provider OIDC valido (es. Keycloak, Azure AD, Auth0, Okta, provider SSO aziendale) con:
-  - Issuer URI (es. `https://idp.company.tld/realms/myrealm`)
-  - Client ID
-  - Client Secret
-  - Grant type: Authorization Code
-  - Scopes: almeno `openid`, consigliati anche `profile`, `email`
-
-
-## Variabili d'ambiente richieste
-Impostare le seguenti variabili d'ambiente prima di avviare l'applicazione:
-- `OIDC_CLIENT_ID`
-- `OIDC_CLIENT_SECRET`
-- `OIDC_ISSUER_URI`
+3) Variabili d'ambiente richieste
+Impostare le seguenti variabili prima di avviare l'applicazione:
+- OIDC_CLIENT_ID: Client ID rilasciato dal provider OIDC
+- OIDC_CLIENT_SECRET: Client Secret rilasciato dal provider OIDC
+- OIDC_ISSUER_URI: Issuer URI del provider (es. https://idp.example.com/realms/myrealm)
 
 Esempi di export:
 - macOS/Linux (bash/zsh):
-  ```bash
-  export OIDC_CLIENT_ID="your-client-id"
-  export OIDC_CLIENT_SECRET="your-client-secret"
-  export OIDC_ISSUER_URI="https://idp.company.tld/realms/myrealm"
-  ```
-- Windows (PowerShell):
-  ```powershell
-  setx OIDC_CLIENT_ID "your-client-id"
-  setx OIDC_CLIENT_SECRET "your-client-secret"
-  setx OIDC_ISSUER_URI "https://idp.company.tld/realms/myrealm"
-  ```
+  export OIDC_CLIENT_ID="..."
+  export OIDC_CLIENT_SECRET="..."
+  export OIDC_ISSUER_URI="https://idp.example.com/realms/myrealm"
 
+- Windows PowerShell:
+  setx OIDC_CLIENT_ID "..."
+  setx OIDC_CLIENT_SECRET "..."
+  setx OIDC_ISSUER_URI "https://idp.example.com/realms/myrealm"
+  (riaprire la shell dopo setx)
 
-## Configurazione Spring Security OAuth2 Client
-Aggiungere/validare in `application.yml` (o profilo `application-local.yml`) la seguente configurazione, che legge dai valori d'ambiente:
+4) Redirect URI da configurare sul provider
+- Aggiungere tra i redirect/callback consentiti sul provider:
+  http://localhost:8080/login/oauth2/code/company
 
-```yaml
+Nota: "company" è il registrationId configurato nell'applicazione. Se modificate il registrationId, dovete aggiornare sia il redirect URI sul provider sia la configurazione locale.
+
+5) Configurazione applicativa (Spring Boot)
+L'app si aspetta le variabili d'ambiente sopra e definisce la registrazione OIDC nel profilo standard. Un esempio di configurazione application.yml può essere:
+
 spring:
   security:
     oauth2:
@@ -54,134 +54,73 @@ spring:
           company:
             client-id: ${OIDC_CLIENT_ID}
             client-secret: ${OIDC_CLIENT_SECRET}
-            provider: company
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
-            scope:
-              - openid
-              - profile
-              - email
+            scope: openid, profile, email
         provider:
           company:
             issuer-uri: ${OIDC_ISSUER_URI}
-server:
-  port: 8080
-```
 
-Note:
-- Il `registrationId` scelto è `company`. Assicurarsi che sia coerente ovunque (login URL, redirect e provider configuration).
-- `issuer-uri` fa sì che Spring scopra automaticamente gli endpoint OIDC (`authorization_endpoint`, `token_endpoint`, `userinfo_endpoint`, `jwks_uri`).
+Suggerimenti:
+- issuer-uri deve puntare all'issuer OIDC, non all'endpoint di autorizzazione/token (es. Keycloak: https://host/realms/<realm>, Okta: https://dev-xxx.okta.com/oauth2/default).
+- Se l'app gira dietro proxy/ingress in ambienti non locali, impostare correttamente Forwarded/ X-Forwarded-* e server.forward-headers-strategy.
 
+6) Avvio in locale
+Prerequisiti: Java 17, Maven installati.
 
-## Redirect URI da configurare sul provider
-Nel pannello del provider OIDC, registrare il redirect/callback URI esatto:
+- Passo 1: Esportare le variabili d'ambiente richieste (vedi sezione 3).
+- Passo 2: Eseguire l'applicazione:
+  mvn spring-boot:run
+- Passo 3: Aprire il browser su http://localhost:8080 e cliccare sul login (se presente) o accedere a una pagina protetta: verrete reindirizzati al provider OIDC e, dopo l'autenticazione, riportati al portale.
+- Verifica: Dopo il login, la UI mostra il nome dell'utente autenticato (claim name o simile).
 
-- `http://localhost:8080/login/oauth2/code/company`
+7) Troubleshooting (errori comuni)
+- redirect_uri_mismatch / invalid_redirect_uri:
+  - Verificare che il redirect URI configurato sul provider coincida esattamente con quello usato dall'app (protocollo, host, porta, path).
+  - In locale usare http, non https, a meno di configurazione esplicita con certificati.
+  - Assicurarsi che il registrationId sia company se usate l'URI indicato.
 
-Opzionale ma consigliato (se supportato):
-- Post Logout Redirect URI: `http://localhost:8080/`
+- invalid_state_parameter / state mismatch:
+  - Assicurarsi che i cookie siano abilitati nel browser.
+  - Se dietro proxy, configurare correttamente le intestazioni X-Forwarded-* e SameSite dei cookie.
 
+- invalid_client / unauthorized_client:
+  - Verificare Client ID e Client Secret (variabili d'ambiente corrette e non vuote).
+  - Verificare che il client sia di tipo confidential e abbia grant authorization_code abilitato.
 
-## Avvio in locale
-1) Verificare di aver impostato le variabili d'ambiente (vedi sezione dedicata).
-2) Avviare l'applicazione:
-   ```bash
-   mvn spring-boot:run
-   ```
-   oppure specificando un profilo, se previsto:
-   ```bash
-   mvn -Dspring-boot.run.profiles=local spring-boot:run
-   ```
-3) Aprire il browser su `http://localhost:8080` e avviare il login:
-   - via pagina di login personalizzata (se presente) oppure
-   - direttamente: `http://localhost:8080/oauth2/authorization/company`
+- issuer not found / JWK set error / signature validation failed:
+  - Controllare che OIDC_ISSUER_URI sia l'issuer corretto del provider.
+  - Verificare reachability di .well-known/openid-configuration e jwks_uri dall'ambiente di sviluppo.
 
-Logout:
-- Endpoint standard Spring Security: `POST /logout` (o `GET /logout` se abilitato). Se configurato l'End Session Endpoint del provider, verrà eseguito il logout federato.
+- clock_skew / token not yet valid:
+  - Sincronizzare l'orologio del sistema (NTP consigliato).
 
+8) Note di sicurezza
+- Non committare mai client secret o altri segreti nel VCS.
+- Usare variabili d'ambiente, Secret Manager o Vault in ambienti non locali.
+- Limitare gli scope al minimo necessario (principio del privilegio minimo).
+- Abilitare TLS in tutti gli ambienti non locali; terminare TLS su Ingress/API Gateway con certificati validi.
+- Configurare session cookie secure e SameSite adeguati in produzione.
 
-## Verifica della visualizzazione utente
-Dopo l'accesso, la UI deve mostrare il nome dell'utente autenticato. A titolo di esempio (Thymeleaf), la `Home` potrebbe renderizzare il nome prelevato da `OidcUser`:
-- Controller (riferimento): `HomeController`
-- Template (riferimento): `templates/home.html`
+9) Riferimenti al codice (progetto)
+- SecurityConfig: src/main/java/com/elite/portal/core/config/SecurityConfig.java
+  - Responsabilità: configurare HttpSecurity con oauth2Login(), antMatchers/authorizeHttpRequests, logout, CSRF, e mapping provider/registration company.
 
-Esempio concettuale in un controller Spring:
-```java
-// Estratto esemplificativo (vedi HomeController nel codice)
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
+- HomeController: src/main/java/com/elite/portal/modules/user/web/HomeController.java
+  - Responsabilità: gestire la home page; legge il principal (OidcUser o OAuth2User) e passa al modello attributi come name, email per la visualizzazione.
 
-@Controller
-public class HomeController {
+- Template UI:
+  - src/main/resources/templates/home.html (o index.html): mostra il nome utente autenticato nella navbar o nell'header della pagina.
 
-    @GetMapping("/")
-    public String home(@AuthenticationPrincipal OidcUser user, Model model) {
-        if (user != null) {
-            String displayName = user.getFullName() != null ? user.getFullName() : user.getPreferredUsername();
-            model.addAttribute("displayName", displayName);
-        }
-        return "home"; // templates/home.html
-    }
-}
-```
+Nota: se i percorsi nel vostro repository differiscono, cercare SecurityConfig e HomeController per confermare la posizione effettiva.
 
-Esempio concettuale in Thymeleaf (`templates/home.html`):
-```html
-<h5 th:if="${displayName}">Ciao, <span th:text="${displayName}"></span>!</h5>
-```
+10) Riferimenti utili
+- Spring Security OAuth2 Client: https://docs.spring.io/spring-security/reference/servlet/oauth2/login/index.html
+- Specifica OpenID Connect: https://openid.net/specs/openid-connect-core-1_0.html
 
+FAQ
+D: Posso usare un redirect diverso da company?
+R: Sì. Se cambiate il registrationId, aggiornate sia application.yml che il redirect URI sul provider (sostituendo company con il nuovo registrationId) e mantenete la coerenza con {baseUrl}/login/oauth2/code/{registrationId}.
 
-## Troubleshooting (errori comuni)
-- Redirect URI mismatch:
-  - Errore: il provider segnala che il redirect non corrisponde.
-  - Soluzione: assicurarsi che il redirect configurato nel provider sia esattamente `http://localhost:8080/login/oauth2/code/company` e che `registrationId` sia `company`.
-
-- Invalid issuer / Impossibile caricare metadata OIDC:
-  - Verificare che `OIDC_ISSUER_URI` punti all'issuer corretto (termina tipicamente con realm/tenant). Deve essere raggiungibile e restituire il discovery document `/.well-known/openid-configuration`.
-
-- Client authentication failed:
-  - Controllare `OIDC_CLIENT_ID` e `OIDC_CLIENT_SECRET`. Rigenerare il secret se necessario. Verificare che il client sia abilitato al grant "authorization_code".
-
-- Errore JWKS / Firma token non valida:
-  - Verificare la reachability di `jwks_uri` dal server. Assicurarsi che l'orologio del sistema non abbia un offset eccessivo (clock skew) che invalidi i token.
-
-- HTTP vs HTTPS in locale:
-  - Alcuni IdP non consentono redirect HTTP. Se richiesto HTTPS anche in locale, usare un proxy locale con TLS o dev tunnel. In produzione, usare sempre TLS (Ingress/Load Balancer con certificati validi).
-
-- Cookie/SameSite:
-  - Se il browser blocca i cookie, verificare le policy `SameSite` e third-party cookies. In ambienti con reverse proxy, impostare correttamente `X-Forwarded-*` e `server.forward-headers-strategy`.
-
-- Path/Port errate:
-  - Assicurarsi che l'app giri su `http://localhost:8080` o aggiornare di conseguenza la configurazione sul provider.
-
-
-## Note di sicurezza
-- Non committare mai `client-secret` o altri segreti nel repository.
-- Usare variabili d'ambiente o un Secret Manager (es. Kubernetes Secrets, AWS Secrets Manager, HashiCorp Vault, GCP Secret Manager, Azure Key Vault).
-- Limitare gli scope al minimo necessario (`least privilege`).
-- Abilitare TLS end-to-end in produzione (Ingress/Api Gateway) e ruotare periodicamente le credenziali.
-
-
-## Riferimenti nel codice
-- Configurazione sicurezza: `SecurityConfig` (es. `com.elite.portal.core.config.SecurityConfig`) dove sono definiti:
-  - le regole di autorizzazione,
-  - l'abilitazione OIDC/OAuth2 Login,
-  - eventuale configurazione logout.
-- Controller UI: `HomeController` (es. `com.elite.portal.core.controller.HomeController`) per recuperare l'`OidcUser` e popolare il model con il nome utente.
-- Template Thymeleaf: `templates/home.html` (e/o i template coinvolti nella home/dashboard) che mostrano il nome utente autenticato.
-
-
-## Endpoint utili (sviluppo)
-- Avvio login OIDC: `GET /oauth2/authorization/company`
-- Callback OIDC: `GET /login/oauth2/code/company`
-- Logout: `POST /logout`
-
-
-## Build
-- Esecuzione locale: `mvn spring-boot:run`
-- Package: `mvn clean package`
-
-Se riscontri problemi non coperti dalla sezione di troubleshooting, verifica i log applicativi e la configurazione del provider OIDC.
+D: Come faccio a cambiare porta in locale?
+R: Impostare SERVER_PORT (o server.port in application.properties/yml). Ricordarsi di aggiornare il redirect URI sul provider di conseguenza.
