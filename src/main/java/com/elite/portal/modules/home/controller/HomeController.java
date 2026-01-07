@@ -1,5 +1,7 @@
 package com.elite.portal.modules.home.controller;
 
+import java.util.Map;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -9,25 +11,21 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
- * Controller MVC per la Home del portale.
- * Gestisce la rotta root '/' e popola il model con l'attributo "displayName"
- * risolto dal principal autenticato tramite OIDC/OAuth2.
+ * Controller MVC per la Home page.
+ * Gestisce la rotta di base e popola il model con l'attributo "displayName"
+ * risolto dall'utente autenticato (OIDC o OAuth2), con fallback null-safe.
  */
 @Controller
 @RequestMapping("/")
 public class HomeController {
 
     /**
-     * Gestisce la GET sulla root e inserisce nel model il nome visualizzato dell'utente autenticato.
+     * Gestisce GET "/" e imposta nel model l'attributo "displayName"
+     * calcolato in base al principal autenticato.
      *
-     * Ordine di risoluzione del displayName:
-     * - OidcUser: fullName -> claims["name"] -> email -> preferredUsername
-     * - OAuth2User: attributes["name"] -> attributes["preferred_username"] -> attributes["email"] -> getName()
-     * In caso di mancata risoluzione, viene impostata una stringa vuota.
-     *
-     * @param model     il model della view
-     * @param principal il principal autenticato (estratto dal contesto security)
-     * @return la view "home/index"
+     * @param model     il Model MVC
+     * @param principal principal autenticato risolto tramite Spring Security
+     * @return nome della view Thymeleaf "home/index"
      */
     @GetMapping
     public String index(Model model, @AuthenticationPrincipal(expression = "principal") Object principal) {
@@ -38,63 +36,65 @@ public class HomeController {
 
     private String resolveDisplayName(Object principal) {
         if (principal instanceof OidcUser) {
-            OidcUser user = (OidcUser) principal;
-            String name = trimToNull(user.getFullName());
-            if (name != null) {
-                return name;
+            OidcUser oidcUser = (OidcUser) principal;
+
+            String fullName = safeTrim(oidcUser.getFullName());
+            if (isNotBlank(fullName)) {
+                return fullName;
             }
-            Object claimName = user.getClaims() != null ? user.getClaims().get("name") : null;
-            name = toStringOrNull(claimName);
-            if (name != null) {
-                return name;
+
+            Map<String, Object> claims = oidcUser.getClaims();
+            String claimName = stringify(claims != null ? claims.get("name") : null);
+            if (isNotBlank(claimName)) {
+                return claimName;
             }
-            name = trimToNull(user.getEmail());
-            if (name != null) {
-                return name;
+
+            String email = safeTrim(oidcUser.getEmail());
+            if (isNotBlank(email)) {
+                return email;
             }
-            name = trimToNull(user.getPreferredUsername());
-            if (name != null) {
-                return name;
+
+            String preferredUsername = safeTrim(oidcUser.getPreferredUsername());
+            if (isNotBlank(preferredUsername)) {
+                return preferredUsername;
             }
-            return "";
         } else if (principal instanceof OAuth2User) {
-            OAuth2User user = (OAuth2User) principal;
-            if (user.getAttributes() != null) {
-                String name = toStringOrNull(user.getAttributes().get("name"));
-                if (name != null && !name.isEmpty()) {
-                    return name;
-                }
-                name = toStringOrNull(user.getAttributes().get("preferred_username"));
-                if (name != null && !name.isEmpty()) {
-                    return name;
-                }
-                name = toStringOrNull(user.getAttributes().get("email"));
-                if (name != null && !name.isEmpty()) {
-                    return name;
-                }
-            }
-            String name = trimToNull(user.getName());
-            if (name != null) {
+            OAuth2User oauth2User = (OAuth2User) principal;
+            Map<String, Object> attributes = oauth2User.getAttributes();
+
+            String name = stringify(attributes != null ? attributes.get("name") : null);
+            if (isNotBlank(name)) {
                 return name;
             }
-            return "";
+
+            String preferredUsername = stringify(attributes != null ? attributes.get("preferred_username") : null);
+            if (isNotBlank(preferredUsername)) {
+                return preferredUsername;
+            }
+
+            String email = stringify(attributes != null ? attributes.get("email") : null);
+            if (isNotBlank(email)) {
+                return email;
+            }
+
+            String fallback = safeTrim(oauth2User.getName());
+            if (isNotBlank(fallback)) {
+                return fallback;
+            }
         }
-        return "";
+        // Fallback generico se non autenticato o dati non disponibili
+        return "Utente";
     }
 
-    private String trimToNull(String value) {
-        if (value == null) {
-            return null;
-        }
-        String v = value.trim();
-        return v.isEmpty() ? null : v;
+    private String stringify(Object value) {
+        return value == null ? null : String.valueOf(value).trim();
     }
 
-    private String toStringOrNull(Object value) {
-        if (value == null) {
-            return null;
-        }
-        String str = String.valueOf(value);
-        return trimToNull(str);
+    private String safeTrim(String value) {
+        return value == null ? null : value.trim();
+    }
+
+    private boolean isNotBlank(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }
