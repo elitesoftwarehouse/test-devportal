@@ -1,0 +1,40 @@
+# ==============================================================================
+# Elite Portal - Configurazione di base e OIDC (client 'company')
+# NOTA: usa variabili d'ambiente per evitare di committare segreti.
+#   OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, OIDC_ISSUER_URI
+#   SERVER_PORT (opzionale, default 8080)
+# ==============================================================================
+
+server:
+  # Porta locale (opzionale). Sovrascrivibile con env SERVER_PORT
+  port: ${SERVER_PORT:8080}
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          company:
+            # Client ID/secret provenienti da variabili d'ambiente (default vuoto per evitare errori in assenza di env)
+            client-id: ${OIDC_CLIENT_ID:}
+            client-secret: ${OIDC_CLIENT_SECRET:}
+            # Scopes richiesti per OIDC
+            scope:
+              - openid
+              - profile
+              - email
+            # Redirect URI template standard per Spring Security
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            # Grant type OIDC
+            authorization-grant-type: authorization_code
+            # Nome visuale del client (facoltativo)
+            client-name: Company
+        provider:
+          company:
+            # Issuer URI del provider OIDC (es. https://idp.company.com/oidc)
+            # Valore letto da variabile d'ambiente, default vuoto per ambienti locali/test
+            issuer-uri: ${OIDC_ISSUER_URI:}
+
+# ==============================================================================
+# Altre proprietà dell'applicazione possono seguire sotto senza essere rimosse
+# ==============================================================================
