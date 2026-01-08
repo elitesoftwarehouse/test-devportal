@@ -26,12 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
-import java.util.Base64;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -44,14 +39,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Integrazione end-to-end per la validazione JWT lato Resource Server usando
  * issuer OIDC e JWKS mockati via WireMock.
- *
- * Scenari coperti:
- * 1. /api/public/ping -> 200 senza token
- * 2. /api/secure/ping senza token -> 401 con JSON RestAuthenticationEntryPoint
- * 3. /api/secure/ping con token firmato da chiave non presente nel JWKS -> 401
- * 4. /api/secure/ping con token valido ma senza scope -> 403 con JSON RestAccessDeniedHandler
- * 5. /api/secure/ping con token valido e scope api.read -> 200
- * 6. /api/secure/echo con token valido e scope api.write -> 200
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -118,7 +105,7 @@ class SecurityProbeControllerIT {
 
     @AfterEach
     void afterEach() {
-        // no-op; lasciato per simmetria e possibili estensioni future
+        // no-op
     }
 
     @Test
@@ -184,12 +171,6 @@ class SecurityProbeControllerIT {
                 .andExpect(status().isOk());
     }
 
-    /**
-     * Genera una coppia di chiavi RSA 2048 bit per i test.
-     *
-     * @return KeyPair RSA
-     * @throws NoSuchAlgorithmException se l'algoritmo RSA non è disponibile
-     */
     private static KeyPair generateRsaKeyPair() throws NoSuchAlgorithmException {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
         keyPairGenerator.initialize(2048);
