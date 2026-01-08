@@ -1,30 +1,29 @@
-# AI Development Summary - Task #874
+# AI Development Summary - Task #875
 
-## Task: Adeguamento flusso di login per collaboratori esterni registrati
+## Task: Test automatizzati backend per flusso di completamento registrazione e login
 
 ## Implementation Summary
-Adeguato il flusso di login per collaboratori esterni registrati: validazione stato ACTIVE, gestione messaggi di errore, limitazione delle funzionalità tramite ruoli EXTERNAL_OWNER/EXTERNAL_COLLABORATOR, redirect a dashboard specifica e aggiornamento dei controlli lato UI per nascondere le sezioni non autorizzate.
+Aggiunti test unitari e di integrazione per il flusso di completamento registrazione e primo login dei collaboratori esterni, coprendo token di registrazione, transizione di stato utente, sicurezza password e comportamento di login.
 
 ## Files Modified/Created
-- `src/main/java/com/elite/portal/core/entity/UserStatus.java`
-- `src/main/java/com/elite/portal/modules/user/entity/ExternalUserType.java`
-- `src/main/java/com/elite/portal/modules/user/entity/User.java`
-- `src/main/java/com/elite/portal/modules/user/repository/UserRepository.java`
-- `src/main/java/com/elite/portal/modules/user/security/ExternalUserDetails.java`
-- `src/main/java/com/elite/portal/modules/user/security/ExternalUserDetailsService.java`
-- `src/main/java/com/elite/portal/core/config/SecurityConfig.java`
-- `src/main/java/com/elite/portal/modules/user/web/AuthController.java`
-- `src/main/java/com/elite/portal/modules/user/web/LoginPageController.java`
-- `src/main/java/com/elite/portal/modules/user/web/ExternalDashboardController.java`
-- `src/test/java/com/elite/portal/modules/user/security/ExternalUserDetailsTest.java`
-- `src/test/java/com/elite/portal/modules/user/web/AuthControllerTest.java`
+- `src/main/java/com/elite/portal/modules/user/registration/RegistrationTokenStatus.java`
+- `src/main/java/com/elite/portal/modules/user/registration/ExternalUserStatus.java`
+- `src/main/java/com/elite/portal/modules/user/registration/ExternalUserEntity.java`
+- `src/main/java/com/elite/portal/modules/user/registration/RegistrationTokenEntity.java`
+- `src/main/java/com/elite/portal/modules/user/registration/RegistrationTokenRepository.java`
+- `src/main/java/com/elite/portal/modules/user/registration/ExternalUserRepository.java`
+- `src/main/java/com/elite/portal/modules/user/registration/RegistrationService.java`
+- `src/main/java/com/elite/portal/modules/user/registration/LoginService.java`
+- `src/test/java/com/elite/portal/modules/user/registration/RegistrationTokenServiceTest.java`
+- `src/test/java/com/elite/portal/modules/user/registration/LoginServiceTest.java`
+- `src/test/java/com/elite/portal/modules/user/registration/RegistrationIntegrationTest.java`
 
 ## Technical Details
-- 10 Java files
+- 8 Java files
 
 
 ## Testing
-2 test files created
+3 test files created
 
 ## Review Checklist
 - [ ] Code follows project patterns and conventions
@@ -37,7 +36,7 @@ Adeguato il flusso di login per collaboratori esterni registrati: validazione st
 - [ ] Database migrations are correct (if applicable)
 
 ## AI Notes
-Assunzioni principali: 1) Non era disponibile codice esistente, quindi è stata definita un'implementazione completa ma minimale aderente allo stack fornito. In un contesto reale andrebbero allineati nomi di entità, repository, security e template alle convenzioni già presenti nel progetto. 2) La gestione dei ruoli RBAC per gli utenti esterni è basata sulle stringhe EXTERNAL_OWNER e EXTERNAL_COLLABORATOR, coerenti con la descrizione della epic. 3) L'API /api/auth/login non emette token JWT per semplicità; in un sistema reale si integrerebbe con il meccanismo di sessione esistente o con un provider di token. 4) La migration SQL presuppone una tabella users già esistente e aggiunge solo i campi necessari per distinguere utenti esterni e gestire lo stato ACTIVE/BLOCKED/DISABLED/PENDING. 5) Il guard JS lavora su data-role negli elementi di menu e sull'array window.currentUserRoles esposto dal backend; ulteriori pagine possono riutilizzare lo stesso pattern per limitare la visibilità delle funzioni.
+L'implementazione fornisce componenti minimi (entita', repository e servizi) necessari per scrivere test unitari e di integrazione del flusso di completamento registrazione e login degli utenti esterni. In un progetto reale, questi dovrebbero essere allineati con le entita' e i servizi gia' presenti nel modulo user, riutilizzando lo stesso schema di database e le stesse classi. I test coprono: creazione/validazione token (validi, scaduti, inesistenti, gia' usati), transizione stato APPROVED_PENDING_REGISTRATION -> ACTIVE, invalidazione token, hashing password con PasswordEncoder, risposta neutra per token inesistenti e comportamento di login in base allo stato utente. La migrazione Flyway crea tabelle minime solo a supporto dei test; adattare il numero della migration (V020) allo schema reale del progetto. Integrare questi test nella pipeline CI esistente eseguendo mvn test nel job di build.
 
 ---
-Generated by AI Dev Agent at 2026-01-08T18:10:56.816512214
+Generated by AI Dev Agent at 2026-01-08T18:13:20.769861541
