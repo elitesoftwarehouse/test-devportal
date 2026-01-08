@@ -1,21 +1,27 @@
-# AI Development Summary - Task #871
+# AI Development Summary - Task #872
 
-## Task: Definizione modello dati e flusso di stato per collaboratori esterni approvati
+## Task: Implementazione API e backend per completamento registrazione e creazione password
 
 ## Implementation Summary
-Introduzione di un nuovo stato APPROVED_PENDING_REGISTRATION per collaboratori esterni approvati ma non ancora registrati, con campi di token di registrazione, scadenza, timestamp di completamento registrazione e flag firstLoginCompleted, inclusi mapping JPA, transizioni di stato e migrazione Flyway.
+Implementata l’API REST POST /api/auth/external/complete-registration per consentire ai collaboratori esterni approvati di completare la registrazione impostando la password, con validazione token, policy password, aggiornamento stato utente, invalidamento token, audit e logging di sicurezza. Aggiunti DTO, service dedicato, enum di errori e test unitari.
 
 ## Files Modified/Created
-- `src/main/java/com/elite/portal/modules/user/entity/ExternalUserStatus.java`
-- `src/main/java/com/elite/portal/modules/user/entity/ExternalUser.java`
-- `src/main/java/com/elite/portal/modules/user/service/ExternalUserRegistrationStateService.java`
-- `src/main/java/com/elite/portal/modules/user/service/RegistrationTokenGenerator.java`
-- `src/main/java/com/elite/portal/modules/user/repository/ExternalUserRepository.java`
-- `src/test/java/com/elite/portal/modules/user/entity/ExternalUserTest.java`
-- `src/test/java/com/elite/portal/modules/user/service/ExternalUserRegistrationStateServiceTest.java`
+- `src/main/java/com/elite/portal/modules/user/auth/api/ExternalRegistrationController.java`
+- `src/main/java/com/elite/portal/modules/user/auth/dto/ExternalCompleteRegistrationRequest.java`
+- `src/main/java/com/elite/portal/modules/user/auth/dto/ExternalCompleteRegistrationResponse.java`
+- `src/main/java/com/elite/portal/modules/user/auth/dto/ExternalRegistrationErrorCode.java`
+- `src/main/java/com/elite/portal/core/entity/UserStatus.java`
+- `src/main/java/com/elite/portal/core/entity/User.java`
+- `src/main/java/com/elite/portal/core/repository/UserRepository.java`
+- `src/main/java/com/elite/portal/modules/user/auth/entity/RegistrationToken.java`
+- `src/main/java/com/elite/portal/modules/user/auth/repository/RegistrationTokenRepository.java`
+- `src/main/java/com/elite/portal/modules/user/auth/service/PasswordPolicyValidator.java`
+- `src/main/java/com/elite/portal/modules/user/auth/service/ExternalRegistrationService.java`
+- `src/test/java/com/elite/portal/modules/user/auth/service/ExternalRegistrationServiceTest.java`
+- `src/test/java/com/elite/portal/modules/user/auth/service/PasswordPolicyValidatorTest.java`
 
 ## Technical Details
-- 5 Java files
+- 11 Java files
 
 
 ## Testing
@@ -32,7 +38,7 @@ Introduzione di un nuovo stato APPROVED_PENDING_REGISTRATION per collaboratori e
 - [ ] Database migrations are correct (if applicable)
 
 ## AI Notes
-Assunzioni principali: (1) Non esisteva ancora un modello consolidato per l'utente esterno, quindi è stata introdotta una entity dedicata ExternalUser nel modulo user seguendo le convenzioni standard Spring Boot/JPA. (2) L'enum ExternalUserStatus documenta chiaramente il significato dei nuovi stati e della transizione APPROVED_PENDING_REGISTRATION -> ACTIVE. (3) La durata del token di registrazione è parametrizzata nel servizio tramite parametro tokenTtlHours; nel resto del sistema potrà essere letto da configurazione. (4) Il controllo di accesso al login dovrà considerare come abilitato solo lo stato ACTIVE, escludendo esplicitamente APPROVED_PENDING_REGISTRATION, come indicato nel metodo getLoginEnabledStatuses. (5) La migrazione Flyway crea la tabella external_user; in un progetto reale andrebbe versionata in continuità con le migrazioni esistenti (il numero V5 è indicativo e va adeguato). (6) Il template HTML è solo a scopo informativo per questa task e non è ancora collegato a un controller; la vera UI di registrazione e primo login verrà implementata nelle story successive.
+Assunzioni principali: (1) Non avendo visibilità sul modello dati e sulle convenzioni esistenti, sono state introdotte entità User e RegistrationToken minime, oltre all'enum UserStatus. In un progetto reale vanno adattate o integrate nel dominio utenti già presente. (2) Il PasswordEncoder è istanziato direttamente nel servizio per semplicità; si consiglia di spostarlo in una configurazione di sicurezza condivisa e iniettare il bean. (3) La Flyway migration V10 crea le tabelle solo se non esistono per ridurre il rischio in assenza dello schema reale, ma va comunque verificata e allineata al database corrente. (4) L'endpoint è puramente backend e non fa login automatico; il primo login avverrà tramite il normale flusso di autenticazione dopo il completamento registrazione. (5) Il logging è presente per tentativi di utilizzo token non valido, scaduto o riutilizzato, e per il successo dell'operazione; per la gestione di 'errori ripetuti' avanzata si può aggiungere una logica di rate limiting o audit centralizzato in un secondo step.
 
 ---
-Generated by AI Dev Agent at 2026-01-08T18:04:33.479801737
+Generated by AI Dev Agent at 2026-01-08T18:06:32.346945525
