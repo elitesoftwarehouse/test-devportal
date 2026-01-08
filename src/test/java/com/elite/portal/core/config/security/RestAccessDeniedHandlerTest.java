@@ -1,62 +1,40 @@
 package com.elite.portal.core.config.security;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.access.AccessDeniedException;
 
-import javax.servlet.ServletException;
-import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 /**
- * Test di unità per {@link RestAccessDeniedHandler}.
+ * Test per {@link RestAccessDeniedHandler}.
  */
-class RestAccessDeniedHandlerTest {
-
-    private RestAccessDeniedHandler handler;
-
-    private ObjectMapper objectMapper;
-
-    @BeforeEach
-    void setUp() {
-        this.objectMapper = new ObjectMapper();
-        this.handler = new RestAccessDeniedHandler(objectMapper);
-    }
+public class RestAccessDeniedHandlerTest {
 
     @Test
-    void handle_ShouldReturnForbiddenJsonResponse() throws IOException, ServletException {
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/api/protected/resource");
+    public void handle_shouldReturn403WithJsonBody() throws Exception {
+        RestAccessDeniedHandler handler = new RestAccessDeniedHandler();
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        AccessDeniedException exception = new AccessDeniedException("Missing scope");
 
-        MockHttpServletResponse response = new MockHttpServletResponse();
-
-        AccessDeniedException exception = new AccessDeniedException("User does not have required role");
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter writer = new PrintWriter(stringWriter);
+        when(response.getWriter()).thenReturn(writer);
 
         handler.handle(request, response, exception);
 
-        assertEquals(HttpStatus.FORBIDDEN.value(), response.getStatus());
-        assertEquals(MediaType.APPLICATION_JSON_VALUE, response.getContentType());
-
-        String content = response.getContentAsString();
-        assertNotNull(content);
-
-        JsonNode jsonNode = objectMapper.readTree(content);
-
-        // Verifica campi base del payload
-        assertEquals(HttpStatus.FORBIDDEN.value(), jsonNode.get("status").asInt());
-        assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), jsonNode.get("error").asText());
-        assertEquals("Access is denied", jsonNode.get("message").asText());
-        assertEquals("/api/protected/resource", jsonNode.get("path").asText());
-
-        // timestamp deve essere presente e non nullo
-        assertNotNull(jsonNode.get("timestamp"));
+        verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+        String body = stringWriter.toString();
+        assertThat(body).contains("\"error\":\"forbidden\"");
+        assertThat(body).contains("Missing scope");
     }
 }
