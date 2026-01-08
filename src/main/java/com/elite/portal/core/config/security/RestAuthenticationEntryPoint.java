@@ -1,49 +1,67 @@
 package com.elite.portal.core.config.security;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.stereotype.Component;
 
 /**
- * Entry point per le richieste non autenticate.
- * <p>
- * Restituisce una risposta JSON con stato 401 Unauthorized per le API REST.
+ * REST-specific {@link AuthenticationEntryPoint} that returns a JSON error body
+ * when an unauthenticated client tries to access a protected resource.
  */
-@Component
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
+    private final ObjectMapper objectMapper;
+
     /**
-     * Gestisce i tentativi di accesso a risorse protette senza autenticazione
-     * valida, restituendo una risposta HTTP 401 in formato JSON.
+     * Creates a new {@code RestAuthenticationEntryPoint} instance.
      *
-     * @param request  la richiesta HTTP
-     * @param response la risposta HTTP
-     * @param authException eccezione di autenticazione sollevata da Spring Security
-     * @throws IOException in caso di errore di scrittura sulla response
-     * @throws ServletException in caso di errore del container
+     * @param objectMapper the {@link ObjectMapper} used to serialize the error response
      */
-    @Override
-    public void commence(HttpServletRequest request,
-                         HttpServletResponse response,
-                         AuthenticationException authException) throws IOException, ServletException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        String message = authException != null ? authException.getMessage() : "Unauthorized";
-        String body = "{\"error\":\"unauthorized\",\"message\":\"" + escapeJson(message) + "\"}";
-        response.getWriter().write(body);
+    public RestAuthenticationEntryPoint(ObjectMapper objectMapper) {
+        if (objectMapper == null) {
+            throw new IllegalArgumentException("objectMapper must not be null");
+        }
+        this.objectMapper = objectMapper;
     }
 
-    private String escapeJson(String value) {
-        if (value == null) {
-            return "";
+    @Override
+    public void commence(HttpServletRequest request, HttpServletResponse response,
+                         AuthenticationException authException) throws IOException, ServletException {
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
+        response.setStatus(status.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+        Map<String, Object> body = new HashMap<String, Object>();
+        body.put("timestamp", OffsetDateTime.now(ZoneOffset.UTC).toString());
+        body.put("status", status.value());
+        body.put("error", status.getReasonPhrase());
+        body.put("message", buildMessage(authException));
+        body.put("path", request.getRequestURI());
+
+        objectMapper.writeValue(response.getOutputStream(), body);
+    }
+
+    private String buildMessage(AuthenticationException authException) {
+        if (authException == null) {
+            return "Full authentication is required to access this resource";
         }
-        return value.replace("\\", "\\\\").replace("\"", "\\\"");
+        String message = authException.getMessage();
+        if (message == null || message.trim().isEmpty()) {
+            return "Authentication failed";
+        }
+        // Avoid leaking stacktrace or class names in the message
+        return message.split("\n")[0];
     }
 }
