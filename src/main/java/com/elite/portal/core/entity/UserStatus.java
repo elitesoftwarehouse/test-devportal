@@ -1,17 +1,28 @@
 package com.elite.portal.core.entity;
 
 /**
- * Stato dell'utente nel ciclo di vita dell'identità applicativa.
+ * Stato dell'utente per la gestione di abilitazione/disabilitazione login.
  */
 public enum UserStatus {
 
-    /** L'utente esterno è stato approvato ma deve ancora completare la registrazione (impostare la password). */
-    APPROVED_PENDING_REGISTRATION,
-
-    /** L'utente è attivo e può accedere al portale. */
+    /**
+     * Utente attivo, abilitato al login.
+     */
     ACTIVE,
 
-    /** Altri stati possibili (placeholder per integrazione con il modello esistente). */
-    INACTIVE,
-    SUSPENDED
+    /**
+     * Utente creato ma non ancora attivato (es. accreditamento in corso o primo accesso non completato).
+     */
+    PENDING,
+
+    /**
+     * Utente disabilitato dall'amministrazione.
+     */
+    DISABLED,
+
+    /**
+     * Utente bloccato per motivi di sicurezza o policy.
+     */
+    BLOCKED
+
 }
