@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Attivazione Account - Elite Portal</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}" />
+    <link rel="stylesheet" th:href="@{/css/user-registration.css}" />
+</head>
+<body>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <div th:if="${success}">
+                        <h4 class="text-success mb-3">Account attivato</h4>
+                        <p th:text="${message}"></p>
+                        <a th:href="@{/login}" class="btn btn-primary mt-3">Vai al login</a>
+                    </div>
+                    <div th:if="${!success}">
+                        <h4 class="text-danger mb-3">Impossibile attivare l'account</h4>
+                        <p th:text="${message}"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

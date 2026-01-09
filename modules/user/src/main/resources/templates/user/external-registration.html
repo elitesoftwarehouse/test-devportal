@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Registrazione Utente Esterno - Elite Portal</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}" />
+    <link rel="stylesheet" th:href="@{/css/user-registration.css}" />
+</head>
+<body>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Registrazione Utente Esterno</h5>
+                </div>
+                <div class="card-body">
+                    <div id="alert-placeholder"></div>
+                    <form id="external-registration-form">
+                        <div class="mb-3">
+                            <label for="firstName" class="form-label">Nome</label>
+                            <input type="text" class="form-control" id="firstName" name="firstName" required maxlength="100" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="lastName" class="form-label">Cognome</label>
+                            <input type="text" class="form-control" id="lastName" name="lastName" required maxlength="100" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required maxlength="255" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required minlength="8" maxlength="128" />
+                            <div class="form-text">Almeno 8 caratteri.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Ruolo</label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="">Seleziona il ruolo</option>
+                                <option th:each="role : ${roles}"
+                                        th:value="${role}"
+                                        th:text="${role == T(com.elite.portal.core.entity.RoleType).EXTERNAL_OWNER ? 'Titolare (EXTERNAL_OWNER)' : 'Collaboratore (EXTERNAL_COLLABORATOR)'}"></option>
+                            </select>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="privacyAccepted" name="privacyAccepted" required />
+                            <label class="form-check-label" for="privacyAccepted">
+                                Dichiaro di aver letto e accettato l'informativa privacy.
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="termsAccepted" name="termsAccepted" required />
+                            <label class="form-check-label" for="termsAccepted">
+                                Accetto i Termini di Servizio di Elite Portal.
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" id="submit-btn">
+                            <span id="submit-text">Registrati</span>
+                            <span id="submit-spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/external-registration.js}"></script>
+</body>
+</html>
