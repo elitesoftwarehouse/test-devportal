@@ -1,24 +1,41 @@
-import axios from "axios";
+import axios, { AxiosInstance } from "axios";
 
-export interface RegistrationRequest {
-  email: string;
-  firstName: string;
-  lastName: string;
-  requestedRole: string;
-  locale?: string;
-}
+const apiClient: AxiosInstance = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE_URL || "/api",
+  withCredentials: true
+});
 
-export interface RegistrationResponse {
+export interface ActivationResponse {
   success: boolean;
+  code:
+    | "ACTIVATION_SUCCESS"
+    | "TOKEN_INVALID"
+    | "TOKEN_EXPIRED"
+    | "TOKEN_USED"
+    | "USER_NOT_FOUND"
+    | "ACCOUNT_ALREADY_ACTIVE"
+    | "ACTIVATION_ERROR";
   message: string;
 }
 
-export async function registerExternalUser(payload: RegistrationRequest): Promise<RegistrationResponse> {
-  const response = await axios.post<RegistrationResponse>("/api/auth/register", payload);
+export const activateAccount = async (token: string): Promise<ActivationResponse> => {
+  const response = await apiClient.get<ActivationResponse>(`/auth/activate/${token}`);
   return response.data;
+};
+
+export interface LoginResponse {
+  success: boolean;
+  token?: string;
+  user?: {
+    id: string;
+    email: string;
+    status: string;
+  };
+  code?: string;
+  message?: string;
 }
 
-export async function activateUser(token: string): Promise<RegistrationResponse> {
-  const response = await axios.get<RegistrationResponse>(`/api/auth/activate/${token}`);
+export const login = async (email: string, password: string): Promise<LoginResponse> => {
+  const response = await apiClient.post<LoginResponse>("/auth/login", { email, password });
   return response.data;
-}
+};
