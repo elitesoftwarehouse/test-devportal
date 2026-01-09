@@ -1,31 +1,23 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import { Pool } from 'pg';
-import { createExternalCollaboratorInvitationRouter } from './modules/external-collaborators/http/ExternalCollaboratorInvitationController';
-import { ExternalCollaboratorInvitationService } from './modules/external-collaborators/services/ExternalCollaboratorInvitationService';
-import { ExternalCollaboratorInvitationRepository } from './modules/external-collaborators/repositories/ExternalCollaboratorInvitationRepository';
-import { Logger } from './shared/logger/Logger';
-import { MailerService } from './shared/mailer/MailerService';
+import cors from 'cors';
+import externalInvitesRouter from './routes/externalInvites.routes';
+// ... altri import esistenti
 
 const app = express();
+
+app.use(cors());
 app.use(bodyParser.json());
 
-// Inizializzazione dipendenze condivise (mock/dummy o reali, in linea con il progetto esistente)
-const dbPool = new Pool();
-const logger = new Logger();
-const mailerService = new MailerService(logger, process.env);
+// ... middleware di auth che popola req.user
 
-const externalCollaboratorInvitationRepository = new ExternalCollaboratorInvitationRepository(dbPool);
-const externalCollaboratorInvitationService = new ExternalCollaboratorInvitationService({
-  mailerService,
-  invitationRepository: externalCollaboratorInvitationRepository,
-  logger,
-  env: process.env
-});
+// Routes esistenti
+// app.use('/api/companies', companiesRouter);
+// app.use('/api/projects', projectsRouter);
 
-app.use(
-  '/api',
-  createExternalCollaboratorInvitationRouter(externalCollaboratorInvitationService)
-);
+// Nuova route per inviti collaboratori esterni
+app.use('/api/external-invites', externalInvitesRouter);
+
+// ... error handler generico se presente
 
 export default app;
