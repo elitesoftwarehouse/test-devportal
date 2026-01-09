@@ -1,16 +1,30 @@
-import express from 'express';
+import express, { Application } from 'express';
+import cors from 'cors';
 import bodyParser from 'body-parser';
-import profileRoutes from './api/profile/profile.routes';
 
-const app = express();
+// Import dei router esistenti dell'applicazione
+// import timesheetRouter from './routes/timesheet.routes';
+// import companiesRouter from './routes/companies.routes';
+// ... altri router
 
+import profileQualityRouter from './routes/profileQuality.routes';
+
+const app: Application = express();
+
+app.use(cors());
 app.use(bodyParser.json());
 
-app.use('/api/profiles', profileRoutes);
+// Registrazione router esistenti
+// app.use('/api/timesheet', timesheetRouter);
+// app.use('/api/companies', companiesRouter);
+// ... altri router
 
-app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error(err);
-  res.status(500).json({ message: 'Errore interno del server' });
+// Nuova rotta per la vista unificata profili / indicatori di qualità
+app.use('/api/profile-quality', profileQualityRouter);
+
+// Healthcheck di base
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok' });
 });
 
 export default app;
