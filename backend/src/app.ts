@@ -1,27 +1,16 @@
-import express, { Application } from 'express';
-import session from 'express-session';
-import rbacExampleRoutes from './routes/rbacExample.routes';
+import express from "express";
+import bodyParser from "body-parser";
+import cors from "cors";
+import companyOnboardingRoutes from "./routes/companyOnboarding.routes";
+// ... altri import esistenti
 
-// Altri import e route esistenti vanno mantenuti
-// import otherRoutes from './routes/other.routes';
+const app = express();
 
-const app: Application = express();
+app.use(cors());
+app.use(bodyParser.json());
 
-app.use(express.json());
+// ... altre route esistenti
+app.use("/api", companyOnboardingRoutes);
 
-// Esempio basico di configurazione sessione (da adattare a quella già esistente)
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'dev-secret',
-    resave: false,
-    saveUninitialized: false,
-  }),
-);
-
-// Montare le route esistenti
-// app.use('/api', otherRoutes);
-
-// Route di esempio per verificare il middleware RBAC
-app.use('/api', rbacExampleRoutes);
-
+// ... export / error handler esistenti
 export default app;
