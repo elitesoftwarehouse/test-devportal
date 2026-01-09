@@ -1,34 +1,60 @@
-export interface InviteExternalCollaboratorPayload {
+export interface InviteExternalCollaboratorRequest {
   email: string;
-  externalOwnerId: string;
-  externalOwnerName: string;
-  externalOwnerCompanyName: string;
-  externalOwnerSupportEmail?: string;
-  locale?: string;
 }
 
 export interface InviteExternalCollaboratorResponse {
-  invitationId: string;
-  invitedEmail: string;
+  id: string;
+  email: string;
+  token: string;
   expiresAt: string;
+  status: string;
+  externalOwnerCompanyId: string;
 }
 
-export const inviteExternalCollaborator = async (
-  payload: InviteExternalCollaboratorPayload
-): Promise<InviteExternalCollaboratorResponse> => {
-  const response = await fetch('/api/external-collaborators/invitations', {
+export interface CompleteActivationRequest {
+  token: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+}
+
+export interface CompleteActivationResponse {
+  userId: string;
+  role: string;
+  companyId: string;
+  invitationStatus: string;
+}
+
+const BASE_URL = '/api';
+
+export async function inviteExternalCollaborator(
+  payload: InviteExternalCollaboratorRequest,
+): Promise<InviteExternalCollaboratorResponse> {
+  const res = await fetch(`${BASE_URL}/external-collaborators/invitations`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
   });
 
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    const errorCode = errorBody?.error || 'UNKNOWN_ERROR';
-    throw new Error(errorCode);
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'ERRORE_INVITO_COLLABORATORE');
   }
+  return data as InviteExternalCollaboratorResponse;
+}
 
-  return (await response.json()) as InviteExternalCollaboratorResponse;
-};
+export async function completeExternalActivation(
+  payload: CompleteActivationRequest,
+): Promise<CompleteActivationResponse> {
+  const res = await fetch(`${BASE_URL}/external-collaborators/activation`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'ERRORE_ATTIVAZIONE_COLLABORATORE');
+  }
+  return data as CompleteActivationResponse;
+}

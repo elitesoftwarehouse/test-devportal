@@ -1,191 +1,104 @@
-import { randomBytes } from 'crypto';
-import { Repository } from 'typeorm';
-import { ExternalCollaboratorInvitation } from '../models/ExternalCollaboratorInvitation';
-import { User } from '../models/User';
-import { Company } from '../models/Company';
-import { getLogger } from '../utils/logger';
+import { ExternalCollaboratorInvitation } from '../domain/externalCollaboration/ExternalCollaboratorInvitation';
+import { ExternalCollaboratorInvitationRepository } from '../repositories/ExternalCollaboratorInvitationRepository';
+import { UserRepository } from '../repositories/UserRepository';
+import { Mailer } from '../services/Mailer';
+import { AuthorizationService } from '../services/AuthorizationService';
 
-export interface CreateExternalInvitationInput {
+export interface InviteExternalCollaboratorPayload {
   email: string;
-  firstName?: string;
-  lastName?: string;
-  message?: string;
-  companyId: string;
-  owner: User;
 }
 
-export interface CompleteExternalInvitationInput {
+export interface CompleteExternalActivationPayload {
   token: string;
-  password: string;
   firstName: string;
   lastName: string;
-  acceptPrivacy: boolean;
-  acceptTerms: boolean;
+  password: string;
 }
 
 export class ExternalCollaboratorInvitationService {
-  private invitationRepo: Repository<ExternalCollaboratorInvitation>;
-  private userRepo: Repository<User>;
-  private companyRepo: Repository<Company>;
-  private logger = getLogger('ExternalCollaboratorInvitationService');
-
   constructor(
-    invitationRepo: Repository<ExternalCollaboratorInvitation>,
-    userRepo: Repository<User>,
-    companyRepo: Repository<Company>
-  ) {
-    this.invitationRepo = invitationRepo;
-    this.userRepo = userRepo;
-    this.companyRepo = companyRepo;
-  }
+    private readonly invitationRepository: ExternalCollaboratorInvitationRepository,
+    private readonly userRepository: UserRepository,
+    private readonly mailer: Mailer,
+    private readonly authorizationService: AuthorizationService,
+  ) {}
 
-  private generateToken(): string {
-    return randomBytes(32).toString('hex');
-  }
+  async inviteExternalCollaborator(currentUserId: string, payload: InviteExternalCollaboratorPayload) {
+    await this.authorizationService.assertCanInviteExternalCollaborator(currentUserId);
 
-  private getDefaultExpirationDate(): Date {
-    const d = new Date();
-    d.setDate(d.getDate() + 7); // 7 giorni di validità
-    return d;
-  }
+    const normalizedEmail = payload.email.toLowerCase();
 
-  async createInvitation(input: CreateExternalInvitationInput): Promise<ExternalCollaboratorInvitation> {
-    const { email, firstName, lastName, message, companyId, owner } = input;
-
-    const company = await this.companyRepo.findOne({ where: { id: companyId } });
-    if (!company) {
-      throw new Error('COMPANY_NOT_FOUND');
-    }
-
-    const existingUser = await this.userRepo.findOne({ where: { email: email.toLowerCase() } });
-
-    const now = new Date();
-    const activeInvitation = await this.invitationRepo.findOne({
-      where: {
-        email: email.toLowerCase(),
-        company: { id: companyId },
-        status: 'PENDING'
-      },
-      relations: ['company']
-    });
-
-    if (activeInvitation && activeInvitation.expiresAt > now) {
-      throw new Error('ACTIVE_INVITATION_ALREADY_EXISTS');
-    }
-
-    const token = this.generateToken();
-
-    const invitation = this.invitationRepo.create({
-      email: email.toLowerCase(),
-      firstName: firstName || null,
-      lastName: lastName || null,
-      message: message || null,
-      token,
-      expiresAt: this.getDefaultExpirationDate(),
-      status: 'PENDING',
-      owner,
-      company,
-      acceptedBy: null,
-      acceptedAt: null
-    });
-
+    const existingUser = await this.userRepository.findByEmail(normalizedEmail);
     if (existingUser) {
-      this.logger.info(
-        `Creating external collaborator invitation for existing user ${existingUser.id} / ${email}`
-      );
-    } else {
-      this.logger.info(`Creating external collaborator invitation for new user ${email}`);
+      throw new Error('EMAIL_ALREADY_IN_USE');
     }
 
-    const saved = await this.invitationRepo.save(invitation);
+    const existingInvitation = await this.invitationRepository.findPendingByEmail(normalizedEmail);
+    if (existingInvitation) {
+      throw new Error('INVITATION_ALREADY_EXISTS');
+    }
 
-    // Integrazione con sistema di email/invio notifiche può essere aggiunta qui
+    const owner = await this.userRepository.findById(currentUserId);
+    if (!owner || !owner.companyId) {
+      throw new Error('EXTERNAL_OWNER_COMPANY_NOT_FOUND');
+    }
 
-    return saved;
+    const invitation = ExternalCollaboratorInvitation.createNew(normalizedEmail, owner.companyId);
+
+    await this.invitationRepository.save(invitation);
+
+    try {
+      await this.mailer.sendExternalCollaboratorInvitation({
+        to: normalizedEmail,
+        token: invitation.token,
+        companyId: owner.companyId,
+      });
+    } catch (err) {
+      await this.invitationRepository.delete(invitation.id);
+      throw new Error('MAIL_SENDING_FAILED');
+    }
+
+    return invitation.toPrimitives();
   }
 
-  async getInvitationByToken(token: string): Promise<ExternalCollaboratorInvitation> {
-    const invitation = await this.invitationRepo.findOne({
-      where: { token },
-      relations: ['company', 'owner']
-    });
-
+  async completeActivation(payload: CompleteExternalActivationPayload) {
+    const invitation = await this.invitationRepository.findByToken(payload.token);
     if (!invitation) {
       throw new Error('INVITATION_NOT_FOUND');
     }
 
-    const now = new Date();
-    if (invitation.expiresAt <= now) {
+    if (invitation.status === 'ACCEPTED') {
+      throw new Error('INVITATION_ALREADY_USED');
+    }
+
+    if (invitation.isExpired()) {
+      invitation.expire();
+      await this.invitationRepository.save(invitation);
       throw new Error('INVITATION_EXPIRED');
     }
 
-    if (invitation.status !== 'PENDING') {
-      throw new Error('INVITATION_NOT_PENDING');
-    }
-
-    return invitation;
-  }
-
-  async completeInvitation(input: CompleteExternalInvitationInput): Promise<User> {
-    const { token, password, firstName, lastName, acceptPrivacy, acceptTerms } = input;
-
-    if (!acceptPrivacy || !acceptTerms) {
-      throw new Error('CONSENTS_NOT_ACCEPTED');
-    }
-
-    const invitation = await this.getInvitationByToken(token);
-
-    const existingUser = await this.userRepo.findOne({ where: { email: invitation.email } });
-
-    let user: User;
-
+    const existingUser = await this.userRepository.findByEmail(invitation.email);
     if (existingUser) {
-      user = existingUser;
-      if (!user.firstName) user.firstName = firstName;
-      if (!user.lastName) user.lastName = lastName;
-      if (!user.passwordHash) {
-        user.setPassword(password);
-      }
-    } else {
-      user = this.userRepo.create({
-        email: invitation.email,
-        firstName,
-        lastName,
-        role: 'EXTERNAL_COLLABORATOR',
-        isActive: true
-      } as any);
-      user.setPassword(password);
+      throw new Error('EMAIL_ALREADY_IN_USE');
     }
 
-    if (!user.roles || !Array.isArray((user as any).roles)) {
-      (user as any).roles = [];
-    }
+    const user = await this.userRepository.createExternalCollaborator({
+      email: invitation.email,
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      password: payload.password,
+      companyId: invitation.externalOwnerCompanyId,
+      role: 'EXTERNAL_COLLABORATOR',
+    });
 
-    if (!(user as any).roles.includes('EXTERNAL_COLLABORATOR')) {
-      (user as any).roles.push('EXTERNAL_COLLABORATOR');
-    }
+    invitation.accept();
+    await this.invitationRepository.save(invitation);
 
-    // associazione all'azienda invitante
-    if (!(user as any).companies) {
-      (user as any).companies = [];
-    }
-    const alreadyLinked = (user as any).companies.some((c: Company) => c.id === invitation.company.id);
-    if (!alreadyLinked) {
-      (user as any).companies.push(invitation.company);
-    }
-
-    const savedUser = await this.userRepo.save(user);
-
-    invitation.status = 'ACCEPTED';
-    invitation.acceptedBy = savedUser;
-    invitation.acceptedAt = new Date();
-
-    await this.invitationRepo.save(invitation);
-
-    this.logger.info(
-      `External collaborator invitation accepted by user ${savedUser.id} for company ${invitation.company.id}`
-    );
-
-    return savedUser;
+    return {
+      userId: user.id,
+      role: user.role,
+      companyId: user.companyId,
+      invitationStatus: invitation.status,
+    };
   }
 }
