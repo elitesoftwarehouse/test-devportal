@@ -1,72 +1,96 @@
-import axios, { AxiosResponse } from 'axios';
-
-export interface CompanyCollaboratorDTO {
-  associationId: number;
-  collaboratorId: number;
-  companyId: number;
-  name: string;
-  email: string | null;
-  phone: string | null;
+export interface CompanyCollaboratorDto {
+  id: string;
+  companyId: string;
+  collaboratorId: string;
   role: string;
-  status: 'ACTIVE' | 'INACTIVE';
+  status: string;
 }
 
-export interface AddCompanyCollaboratorPayload {
-  collaboratorId?: number;
-  createNew?: boolean;
-  name?: string;
-  email?: string;
-  phone?: string;
+export interface CreateCompanyCollaboratorDto {
+  collaboratorId: string;
   role: string;
-  status: 'ACTIVE' | 'INACTIVE';
 }
 
-export interface UpdateCompanyCollaboratorPayload {
-  role?: string;
-  status?: 'ACTIVE' | 'INACTIVE';
-  email?: string;
-  phone?: string;
+export interface UpdateCompanyCollaboratorDto {
+  role: string;
 }
 
-const BASE_URL = '/api/companies';
+export interface ToggleStatusDto {
+  status: string;
+}
 
-export const companyCollaboratorsApi = {
-  async list(companyId: number): Promise<CompanyCollaboratorDTO[]> {
-    const res: AxiosResponse<CompanyCollaboratorDTO[]> = await axios.get(
-      `${BASE_URL}/${companyId}/collaborators`
-    );
-    return res.data;
-  },
+const BASE_URL = '/api';
 
-  async add(companyId: number, payload: AddCompanyCollaboratorPayload): Promise<CompanyCollaboratorDTO> {
-    const res: AxiosResponse<CompanyCollaboratorDTO> = await axios.post(
-      `${BASE_URL}/${companyId}/collaborators`,
-      payload
-    );
-    return res.data;
-  },
-
-  async update(
-    companyId: number,
-    associationId: number,
-    payload: UpdateCompanyCollaboratorPayload
-  ): Promise<CompanyCollaboratorDTO> {
-    const res: AxiosResponse<CompanyCollaboratorDTO> = await axios.put(
-      `${BASE_URL}/${companyId}/collaborators/${associationId}`,
-      payload
-    );
-    return res.data;
-  },
-
-  async updateStatus(
-    companyId: number,
-    associationId: number,
-    status: 'ACTIVE' | 'INACTIVE'
-  ): Promise<CompanyCollaboratorDTO> {
-    const res: AxiosResponse<CompanyCollaboratorDTO> = await axios.patch(
-      `${BASE_URL}/${companyId}/collaborators/${associationId}/status`,
-      { status }
-    );
-    return res.data;
+const buildHeaders = (isAdmin: boolean) => {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json'
+  };
+  // header usato dal mock middleware per i test/autorizzazioni
+  if (isAdmin) {
+    (headers as any)['x-mock-role'] = 'ADMIN';
   }
+  return headers;
+};
+
+export const getCompanyCollaborators = async (companyId: string): Promise<CompanyCollaboratorDto[]> => {
+  const res = await fetch(`${BASE_URL}/companies/${companyId}/collaborators`, {
+    headers: buildHeaders(true)
+  });
+  if (!res.ok) {
+    throw new Error('Errore nel caricamento collaboratori');
+  }
+  return res.json();
+};
+
+export const createCompanyCollaborator = async (
+  companyId: string,
+  payload: CreateCompanyCollaboratorDto,
+  isAdmin: boolean
+): Promise<CompanyCollaboratorDto> => {
+  const res = await fetch(`${BASE_URL}/companies/${companyId}/collaborators`, {
+    method: 'POST',
+    headers: buildHeaders(isAdmin),
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Errore nella creazione associazione');
+  }
+  return res.json();
+};
+
+export const updateCompanyCollaborator = async (
+  companyId: string,
+  id: string,
+  payload: UpdateCompanyCollaboratorDto,
+  isAdmin: boolean
+): Promise<CompanyCollaboratorDto> => {
+  const res = await fetch(`${BASE_URL}/companies/${companyId}/collaborators/${id}`, {
+    method: 'PUT',
+    headers: buildHeaders(isAdmin),
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Errore nella modifica associazione');
+  }
+  return res.json();
+};
+
+export const toggleCompanyCollaboratorStatus = async (
+  companyId: string,
+  id: string,
+  payload: ToggleStatusDto,
+  isAdmin: boolean
+): Promise<CompanyCollaboratorDto> => {
+  const res = await fetch(`${BASE_URL}/companies/${companyId}/collaborators/${id}/status`, {
+    method: 'PATCH',
+    headers: buildHeaders(isAdmin),
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Errore nel cambio stato');
+  }
+  return res.json();
 };
