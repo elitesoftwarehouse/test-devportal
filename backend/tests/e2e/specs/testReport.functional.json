@@ -1,0 +1,41 @@
+{
+  "taskId": 1060,
+  "title": "Test funzionali/UI del wizard di primo accreditamento per EXTERNAL_OWNER",
+  "scope": [
+    "Accesso come EXTERNAL_OWNER senza azienda collegata e apertura automatica/manuale del wizard",
+    "Compilazione completa del wizard e redirect finale all'area aziendale",
+    "Validazioni client-side per obbligatorietà campi e formati base",
+    "Gestione errori backend (es. P.IVA duplicata) e coerenza UI",
+    "Comportamento per EXTERNAL_OWNER con azienda già accreditata",
+    "Responsività base desktop/mobile del wizard"
+  ],
+  "environment": {
+    "baseUrl": "${E2E_BASE_URL}",
+    "browserProjects": ["chromium-desktop", "webkit-mobile"],
+    "users": {
+      "externalOwnerNoCompany": "${E2E_EXTERNAL_OWNER_NO_COMPANY_EMAIL}",
+      "externalOwnerWithCompany": "${E2E_EXTERNAL_OWNER_WITH_COMPANY_EMAIL}"
+    }
+  },
+  "results": {
+    "status": "IN_PROGRESS",
+    "lastRun": null,
+    "summary": "La suite Playwright è stata predisposta. Eseguire `npx playwright test` per generare il report aggiornato.",
+    "knownBugs": [
+      {
+        "id": "BUG-WIZ-001",
+        "title": "Messaggio di errore P.IVA duplicata non mappato correttamente in UI",
+        "status": "OPEN",
+        "description": "In alcuni ambienti l'errore 409 COMPAY_VAT_DUPLICATE viene mostrato come errore generico senza testo specifico.",
+        "stepsToReproduce": [
+          "Login come EXTERNAL_OWNER senza azienda",
+          "Apri wizard primo accreditamento",
+          "Inserisci una P.IVA già presente a sistema",
+          "Completa tutti gli step e conferma"
+        ],
+        "expectedResult": "Messaggio chiaro, es. 'Partita IVA già presente a sistema'",
+        "actualResult": "Errore generico 'Si è verificato un errore imprevisto'"
+      }
+    ]
+  }
+}
