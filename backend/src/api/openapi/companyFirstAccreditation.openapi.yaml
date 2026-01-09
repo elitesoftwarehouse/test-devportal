@@ -1,0 +1,173 @@
+openapi: 3.0.3
+info:
+  title: Elite Portal - Primo Accreditamento Azienda
+  version: 1.0.0
+paths:
+  /companies/first-accreditation:
+    post:
+      summary: Crea una bozza di azienda e collega l'utente EXTERNAL_OWNER come owner
+      tags:
+        - Companies
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FirstAccreditationRequest'
+      responses:
+        '201':
+          description: Azienda creata in stato DRAFT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '400':
+          description: Dati non validi
+        '401':
+          description: Non autenticato
+        '403':
+          description: Accesso negato (ruolo non valido)
+        '409':
+          description: Partita IVA / Codice fiscale già esistente
+  /companies/{id}/first-accreditation:
+    put:
+      summary: Completa i dati aziendali e conferma il primo accreditamento
+      tags:
+        - Companies
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID azienda
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FirstAccreditationRequest'
+      responses:
+        '200':
+          description: Azienda aggiornata e attivata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '400':
+          description: Dati non validi
+        '401':
+          description: Non autenticato
+        '403':
+          description: Accesso negato (non owner)
+        '404':
+          description: Azienda non trovata
+        '409':
+          description: Partita IVA / Codice fiscale già esistente
+  /companies/{id}:
+    get:
+      summary: Recupera i dati base di un'azienda collegata all'owner esterno
+      tags:
+        - Companies
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID azienda
+      responses:
+        '200':
+          description: Dati base azienda
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '401':
+          description: Non autenticato
+        '403':
+          description: Accesso negato (non owner)
+        '404':
+          description: Azienda non trovata
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    SedeLegale:
+      type: object
+      properties:
+        indirizzo:
+          type: string
+        cap:
+          type: string
+        citta:
+          type: string
+        provincia:
+          type: string
+      required:
+        - indirizzo
+        - cap
+        - citta
+        - provincia
+    FirstAccreditationRequest:
+      type: object
+      properties:
+        ragioneSociale:
+          type: string
+        partitaIva:
+          type: string
+        codiceFiscale:
+          type: string
+          nullable: true
+        sedeLegale:
+          $ref: '#/components/schemas/SedeLegale'
+        email:
+          type: string
+        telefono:
+          type: string
+          nullable: true
+      required:
+        - ragioneSociale
+        - partitaIva
+        - sedeLegale
+        - email
+    Company:
+      type: object
+      properties:
+        id:
+          type: integer
+        ragioneSociale:
+          type: string
+        partitaIva:
+          type: string
+        codiceFiscale:
+          type: string
+          nullable: true
+        sedeLegaleIndirizzo:
+          type: string
+        sedeLegaleCap:
+          type: string
+        sedeLegaleCitta:
+          type: string
+        sedeLegaleProvincia:
+          type: string
+        email:
+          type: string
+        telefono:
+          type: string
+          nullable: true
+        statoAccreditamento:
+          type: string
+          enum: [DRAFT, ACTIVE, PENDING_APPROVAL]
+        ownerUserId:
+          type: integer
+          nullable: true
