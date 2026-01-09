@@ -1,18 +1,18 @@
-export class Logger {
-  private context: string;
+/* Semplice wrapper di logging; in produzione usare una libreria come pino o winston */
 
-  constructor(context: string) {
-    this.context = context;
-  }
-
-  info(message: string, meta?: any): void {
-    // Logging essenziale, in reale progetto integrato con logger esistente
-    // eslint-disable-next-line no-console
-    console.log(`[INFO] [${this.context}] ${message}`, meta || '');
-  }
-
-  error(message: string, meta?: any): void {
-    // eslint-disable-next-line no-console
-    console.error(`[ERROR] [${this.context}] ${message}`, meta || '');
-  }
-}
+export const logger = {
+  info: (meta: any, message?: string) => {
+    if (message) {
+      console.log('[INFO]', message, JSON.stringify(meta));
+    } else {
+      console.log('[INFO]', JSON.stringify(meta));
+    }
+  },
+  error: (meta: any, message?: string) => {
+    if (message) {
+      console.error('[ERROR]', message, JSON.stringify(meta));
+    } else {
+      console.error('[ERROR]', JSON.stringify(meta));
+    }
+  },
+};
