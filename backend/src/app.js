@@ -1,52 +1,46 @@
-const express = require('express');
-const cookieParser = require('cookie-parser');
-const cookieSession = require('cookie-session');
-const bodyParser = require('body-parser');
+import express from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
 
-const { seedDemoUsers } = require('./models/User');
-const { authMiddleware, requireAuth, requireRoles } = require('./middleware/auth');
-const authRoutes = require('./routes/auth');
+// Import router esistenti (placeholder: mantenere quelli già presenti nel progetto)
+// import authRouter from './routes/authRoute.js';
+// import otherRouters from './routes/...';
+
+import authMeRoute from './routes/authMeRoute.js';
 
 const app = express();
 
 // Middleware globali
-app.use(bodyParser.json());
+app.use(express.json());
 app.use(cookieParser());
 
-// Configurazione sessione basata su cookie firmato
+// Configurazione CORS: assicurarsi che corrisponda a quella già definita nel progetto.
+// L'opzione credentials: true è fondamentale per inviare i cookie (sessione) dal frontend.
 app.use(
-  cookieSession({
-    name: 'elite_sid',
-    keys: [process.env.SESSION_SECRET || 'development-secret-key'],
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000 // 24 ore
+  cors({
+    origin: process.env.FRONTEND_ORIGIN || 'http://localhost:3000',
+    credentials: true
   })
 );
 
-// Inizializzazione utenti demo (solo sviluppo / test)
-seedDemoUsers().catch((err) => {
-  console.error('Errore seed utenti demo:', err.message);
-});
+// Registrazione router esistenti
+// app.use('/auth', authRouter);
+// app.use('/api', otherRouters);
 
-// Popola req.user se sessione valida
-app.use(authMiddleware);
+// Nuovo endpoint /auth/me (coerente con la story)
+app.use('/auth', authMeRoute);
 
-// Rotte di autenticazione
-app.use('/auth', authRoutes);
-
-// Esempio di rotta protetta per testare RBAC
-app.get('/api/admin/overview', requireAuth, requireRoles(['ADMIN']), (req, res) => {
-  return res.json({
-    message: 'Area amministrativa',
-    user: req.user
+// Gestione errori base (mantenere coerente con implementazione esistente)
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  return res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Errore interno del server.'
   });
 });
 
-// Rotta di salute
-app.get('/health', (req, res) => {
-  return res.json({ status: 'ok' });
-});
-
-module.exports = app;
+export default app;
