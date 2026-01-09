@@ -1,102 +1,81 @@
-const { DataTypes } = require('sequelize');
 const bcrypt = require('bcrypt');
 
 /**
- * Modello User
- * Aggiornato per supportare registrazione utenti esterni con attivazione.
+ * Modello User in-memory (placeholder per DB reale)
+ * In un'implementazione reale questo file userebbe un ORM (es. Sequelize/Prisma).
  */
 
-module.exports = (sequelize) => {
-  const User = sequelize.define(
-    'User',
-    {
-      id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true,
-      },
-      firstName: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-      },
-      lastName: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-      },
-      email: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
-        unique: true,
-        validate: {
-          isEmail: true,
-        },
-      },
-      passwordHash: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
-      },
-      role: {
-        type: DataTypes.ENUM(
-          'ADMIN',
-          'INTERNAL_USER',
-          'EXTERNAL_OWNER',
-          'EXTERNAL_COLLABORATOR'
-        ),
-        allowNull: false,
-        defaultValue: 'INTERNAL_USER',
-      },
-      status: {
-        // PENDING_ACTIVATION, ACTIVE, DISABLED
-        type: DataTypes.ENUM('PENDING_ACTIVATION', 'ACTIVE', 'DISABLED'),
-        allowNull: false,
-        defaultValue: 'PENDING_ACTIVATION',
-      },
-      activationToken: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
-      },
-      activationTokenExpiration: {
-        type: DataTypes.DATE,
-        allowNull: true,
-      },
-      isActive: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: false,
-      },
-      createdAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: DataTypes.NOW,
-      },
-      updatedAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: DataTypes.NOW,
-      },
-    },
-    {
-      tableName: 'users',
-      hooks: {
-        beforeCreate: async (user) => {
-          if (user.changed('passwordHash')) {
-            const saltRounds = 10;
-            user.passwordHash = await bcrypt.hash(user.passwordHash, saltRounds);
-          }
-        },
-        beforeUpdate: async (user) => {
-          if (user.changed('passwordHash')) {
-            const saltRounds = 10;
-            user.passwordHash = await bcrypt.hash(user.passwordHash, saltRounds);
-          }
-        },
-      },
-    }
-  );
+const USERS = [];
 
-  User.prototype.checkPassword = async function (password) {
-    return bcrypt.compare(password, this.passwordHash);
+const USER_STATUS = {
+  ACTIVE: 'active',
+  INACTIVE: 'inactive'
+};
+
+async function hashPassword(plainPassword) {
+  const saltRounds = 10;
+  return bcrypt.hash(plainPassword, saltRounds);
+}
+
+async function createUser({ id, email, password, status = USER_STATUS.ACTIVE, roles = [] }) {
+  const passwordHash = await hashPassword(password);
+  const user = { id, email: email.toLowerCase(), passwordHash, status, roles };
+  USERS.push(user);
+  return user;
+}
+
+function findUserByEmail(email) {
+  if (!email) return null;
+  const normalized = email.toLowerCase();
+  return USERS.find((u) => u.email === normalized) || null;
+}
+
+function findUserById(id) {
+  return USERS.find((u) => u.id === id) || null;
+}
+
+async function verifyPassword(user, plainPassword) {
+  if (!user || !plainPassword) return false;
+  return bcrypt.compare(plainPassword, user.passwordHash);
+}
+
+function getPublicUser(user) {
+  if (!user) return null;
+  return {
+    id: user.id,
+    email: user.email,
+    roles: user.roles || [],
+    status: user.status
   };
+}
 
-  return User;
+// Seed utente demo solo per ambiente di sviluppo / test
+async function seedDemoUsers() {
+  if (USERS.length > 0) return;
+
+  await createUser({
+    id: '1',
+    email: 'admin@example.com',
+    password: 'Admin1234!',
+    roles: ['ADMIN'],
+    status: USER_STATUS.ACTIVE
+  });
+
+  await createUser({
+    id: '2',
+    email: 'user@example.com',
+    password: 'User1234!',
+    roles: ['USER'],
+    status: USER_STATUS.ACTIVE
+  });
+}
+
+module.exports = {
+  USER_STATUS,
+  createUser,
+  findUserByEmail,
+  findUserById,
+  verifyPassword,
+  getPublicUser,
+  seedDemoUsers
 };
