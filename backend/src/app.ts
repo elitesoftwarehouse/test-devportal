@@ -1,25 +1,11 @@
-import express, { Application, Request, Response, NextFunction } from 'express';
+import express from 'express';
 import bodyParser from 'body-parser';
-import professionalProfileRoutes from './routes/professionalProfileRoutes';
+import suppliersRouter from './routes/suppliers';
 
-export function createApp(): Application {
-  const app = express();
-  app.use(bodyParser.json());
+const app = express();
 
-  // Middleware di autenticazione fittizio per test/demo: legge X-User-Id
-  app.use((req: Request, _res: Response, next: NextFunction) => {
-    const userId = req.header('X-User-Id');
-    if (userId) {
-      (req as any).user = { id: userId };
-    }
-    next();
-  });
+app.use(bodyParser.json());
 
-  app.use(professionalProfileRoutes);
+app.use('/api/suppliers', suppliersRouter);
 
-  app.get('/health', (_req: Request, res: Response) => {
-    res.json({ status: 'ok' });
-  });
-
-  return app;
-}
+export default app;
