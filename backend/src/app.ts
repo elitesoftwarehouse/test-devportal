@@ -1,23 +1,16 @@
-import express, { Application } from 'express';
+import express from 'express';
 import bodyParser from 'body-parser';
-import supplierCompaniesAdminRoutes from './routes/admin/supplierCompaniesRoutes';
+import profileRoutes from './api/profile/profile.routes';
 
-const app: Application = express();
+const app = express();
 
 app.use(bodyParser.json());
 
-// Middleware fittizio di autenticazione per integrazione con authorizationMiddleware
-// In produzione questo deve essere sostituito con il sistema di autenticazione reale.
-app.use((req: any, _res, next) => {
-  // Esempio: utente admin
-  req.user = {
-    id: 1,
-    name: 'Admin',
-    roles: ['ADMIN'],
-  };
-  next();
-});
+app.use('/api/profiles', profileRoutes);
 
-app.use('/api/admin/supplier-companies', supplierCompaniesAdminRoutes);
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(err);
+  res.status(500).json({ message: 'Errore interno del server' });
+});
 
 export default app;
