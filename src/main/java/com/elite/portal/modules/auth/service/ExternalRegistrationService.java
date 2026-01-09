@@ -23,6 +23,13 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Optional;
 
+/**
+ * Service per la registrazione di utenti esterni con:
+ * - Validazione email univoca
+ * - Validazione password policy
+ * - Generazione token verifica email
+ * - Gestione aziende (nuove o esistenti)
+ */
 @Service
 public class ExternalRegistrationService {
 
@@ -51,6 +58,13 @@ public class ExternalRegistrationService {
         this.emailVerificationTokenValidityHours = emailVerificationTokenValidityHours;
     }
 
+    /**
+     * Registra un nuovo utente esterno.
+     * 
+     * @param request dati di registrazione
+     * @return response con userId e messaggio di conferma
+     * @throws BusinessException in caso di validazione fallita
+     */
     @Transactional
     public ExternalUserRegistrationResponse registerExternalUser(ExternalUserRegistrationRequest request) {
         validateEmailNotInUse(request.getEmail());
@@ -78,7 +92,7 @@ public class ExternalRegistrationService {
         logger.info("[ExternalRegistrationService] Registrazione utente esterno completata, userId={}, email={}",
                 user.getId(), user.getEmail());
 
-        // L'invio dell'email di verifica viene delegato a un componente già esistente (non incluso qui)
+        // L'invio dell'email di verifica viene delegato a un componente già esistente
 
         String message = "Registrazione completata con successo. Ti abbiamo inviato un'email per la verifica dell'indirizzo.";
         return new ExternalUserRegistrationResponse(user.getId(), message);

@@ -12,6 +12,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Controller per la registrazione di utenti esterni (professionisti e referenti aziendali).
+ * Supporta sia la registrazione API JSON che form-based per retrocompatibilità.
+ */
 @RestController
 @RequestMapping("/api/auth")
 public class ExternalRegistrationController {
@@ -25,6 +29,10 @@ public class ExternalRegistrationController {
         this.logger = logger;
     }
 
+    /**
+     * Registra un nuovo utente esterno (professionista o referente aziendale).
+     * Genera un token di verifica email e lo invia all'utente.
+     */
     @PostMapping("/register-external")
     public ResponseEntity<ExternalUserRegistrationResponse> registerExternal(@Valid @RequestBody ExternalUserRegistrationRequest request) {
         logger.info("[ExternalRegistrationController] Avvio registrazione utente esterno, tipo={}, email={}",
