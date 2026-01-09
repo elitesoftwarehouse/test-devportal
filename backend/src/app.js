@@ -1,21 +1,22 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const companyCollaboratorsRoutes = require('./routes/companyCollaboratorsRoutes');
+"use strict";
+
+const express = require("express");
+const bodyParser = require("body-parser");
 
 const app = express();
 
 app.use(bodyParser.json());
 
-// Altre route già esistenti saranno montate qui.
+// Altri router esistenti qui...
 
-app.use('/api', companyCollaboratorsRoutes);
+const profileCompletenessRoutes = require("./routes/profileCompletenessRoutes");
+app.use(profileCompletenessRoutes);
 
-// Gestione errori standard del progetto
-// eslint-disable-next-line no-unused-vars
+// Gestione errori semplice
 app.use((err, req, res, next) => {
-  const status = err.statusCode || 500;
-  const message = err.message || 'Errore interno del server';
-  res.status(status).json({ message, code: err.code || 'GENERIC_ERROR' });
+  // eslint-disable-line no-unused-vars
+  console.error(err);
+  res.status(500).json({ error: "Errore interno del server" });
 });
 
 module.exports = app;
