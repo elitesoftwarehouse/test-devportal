@@ -1,61 +1,72 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosResponse } from 'axios';
 
-export interface CompanyCollaboratorUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-}
-
-export interface CompanyCollaboratorDto {
-  id: string;
-  companyId: string;
-  userId: string;
+export interface CompanyCollaboratorDTO {
+  associationId: number;
+  collaboratorId: number;
+  companyId: number;
+  name: string;
+  email: string | null;
+  phone: string | null;
   role: string;
-  status: 'ATTIVO' | 'INATTIVO';
-  notes: string | null;
-  createdAt: string;
-  updatedAt: string;
-  user: CompanyCollaboratorUser;
+  status: 'ACTIVE' | 'INACTIVE';
 }
 
-export interface CompanyCollaboratorListResponse {
-  content: CompanyCollaboratorDto[];
-  page: number;
-  size: number;
-  total: number;
+export interface AddCompanyCollaboratorPayload {
+  collaboratorId?: number;
+  createNew?: boolean;
+  name?: string;
+  email?: string;
+  phone?: string;
+  role: string;
+  status: 'ACTIVE' | 'INACTIVE';
 }
 
-class CompanyCollaboratorsApi {
-  private client: AxiosInstance;
-
-  constructor() {
-    this.client = axios.create({
-      baseURL: '/api',
-    });
-  }
-
-  async list(companyId: string, params: { status?: string; page?: number; size?: number } = {}): Promise<CompanyCollaboratorListResponse> {
-    const response = await this.client.get(`/companies/${companyId}/collaborators`, {
-      params,
-    });
-    return response.data;
-  }
-
-  async create(companyId: string, payload: { userId: string; role: string; notes?: string }): Promise<CompanyCollaboratorDto> {
-    const response = await this.client.post(`/companies/${companyId}/collaborators`, payload);
-    return response.data;
-  }
-
-  async update(companyId: string, id: string, payload: { role?: string; notes?: string }): Promise<CompanyCollaboratorDto> {
-    const response = await this.client.put(`/companies/${companyId}/collaborators/${id}`, payload);
-    return response.data;
-  }
-
-  async updateStatus(companyId: string, id: string, status: 'ATTIVO' | 'INATTIVO'): Promise<CompanyCollaboratorDto> {
-    const response = await this.client.patch(`/companies/${companyId}/collaborators/${id}/status`, { status });
-    return response.data;
-  }
+export interface UpdateCompanyCollaboratorPayload {
+  role?: string;
+  status?: 'ACTIVE' | 'INACTIVE';
+  email?: string;
+  phone?: string;
 }
 
-export const companyCollaboratorsApi = new CompanyCollaboratorsApi();
+const BASE_URL = '/api/companies';
+
+export const companyCollaboratorsApi = {
+  async list(companyId: number): Promise<CompanyCollaboratorDTO[]> {
+    const res: AxiosResponse<CompanyCollaboratorDTO[]> = await axios.get(
+      `${BASE_URL}/${companyId}/collaborators`
+    );
+    return res.data;
+  },
+
+  async add(companyId: number, payload: AddCompanyCollaboratorPayload): Promise<CompanyCollaboratorDTO> {
+    const res: AxiosResponse<CompanyCollaboratorDTO> = await axios.post(
+      `${BASE_URL}/${companyId}/collaborators`,
+      payload
+    );
+    return res.data;
+  },
+
+  async update(
+    companyId: number,
+    associationId: number,
+    payload: UpdateCompanyCollaboratorPayload
+  ): Promise<CompanyCollaboratorDTO> {
+    const res: AxiosResponse<CompanyCollaboratorDTO> = await axios.put(
+      `${BASE_URL}/${companyId}/collaborators/${associationId}`,
+      payload
+    );
+    return res.data;
+  },
+
+  async updateStatus(
+    companyId: number,
+    associationId: number,
+    status: 'ACTIVE' | 'INACTIVE'
+  ): Promise<CompanyCollaboratorDTO> {
+    const res: AxiosResponse<CompanyCollaboratorDTO> = await axios.patch(
+      `${BASE_URL}/${companyId}/collaborators/${associationId}/status`,
+      { status }
+    );
+    return res.data;
+  }
+};
