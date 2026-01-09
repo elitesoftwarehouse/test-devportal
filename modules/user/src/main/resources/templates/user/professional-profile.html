@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Profilo Professionista</title>
+    <link th:href="@{/webjars/bootstrap/5.0.2/css/bootstrap.min.css}" rel="stylesheet" />
+    <link th:href="@{/css/user.css}" rel="stylesheet" />
+</head>
+<body>
+<div class="container mt-4 professional-profile-container">
+    <h1 class="mb-4">Profilo Professionista</h1>
+
+    <div id="profile-alert" class="alert d-none" role="alert"></div>
+
+    <form id="professional-profile-form" class="needs-validation" novalidate>
+        <div class="card mb-3">
+            <div class="card-header">Dati anagrafici</div>
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <label for="firstName" class="form-label">Nome *</label>
+                    <input type="text" class="form-control" id="firstName" name="firstName"
+                           th:value="${profile.firstName}" required />
+                </div>
+                <div class="col-md-6">
+                    <label for="lastName" class="form-label">Cognome *</label>
+                    <input type="text" class="form-control" id="lastName" name="lastName"
+                           th:value="${profile.lastName}" required />
+                </div>
+                <div class="col-md-4">
+                    <label for="dateOfBirth" class="form-label">Data di nascita</label>
+                    <input type="date" class="form-control" id="dateOfBirth" name="dateOfBirth"
+                           th:value="${profile.dateOfBirth}" />
+                </div>
+                <div class="col-md-4">
+                    <label for="placeOfBirth" class="form-label">Luogo di nascita</label>
+                    <input type="text" class="form-control" id="placeOfBirth" name="placeOfBirth"
+                           th:value="${profile.placeOfBirth}" />
+                </div>
+                <div class="col-md-4">
+                    <label for="fiscalCode" class="form-label">Codice fiscale *</label>
+                    <input type="text" class="form-control" id="fiscalCode" name="fiscalCode" maxlength="16"
+                           th:value="${profile.fiscalCode}" required />
+                </div>
+                <div class="col-md-4">
+                    <label for="nationality" class="form-label">Nazionalità</label>
+                    <input type="text" class="form-control" id="nationality" name="nationality"
+                           th:value="${profile.nationality}" />
+                </div>
+                <div class="col-md-4">
+                    <label for="gender" class="form-label">Genere (opzionale)</label>
+                    <select id="gender" name="gender" class="form-select">
+                        <option th:value="" th:selected="${profile.gender} == null || ${profile.gender} == ''">Non specificato</option>
+                        <option th:value="M" th:selected="${profile.gender} == 'M'">Maschile</option>
+                        <option th:value="F" th:selected="${profile.gender} == 'F'">Femminile</option>
+                        <option th:value="ALTRO" th:selected="${profile.gender} == 'ALTRO'">Altro</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Recapiti</div>
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <label for="primaryEmail" class="form-label">Email principale *</label>
+                    <input type="email" class="form-control" id="primaryEmail" name="primaryEmail"
+                           th:value="${profile.primaryEmail}" required />
+                </div>
+                <div class="col-md-6">
+                    <label for="secondaryEmail" class="form-label">Email secondaria</label>
+                    <input type="email" class="form-control" id="secondaryEmail" name="secondaryEmail"
+                           th:value="${profile.secondaryEmail}" />
+                </div>
+                <div class="col-md-4">
+                    <label for="mobilePhone" class="form-label">Cellulare *</label>
+                    <input type="text" class="form-control" id="mobilePhone" name="mobilePhone"
+                           th:value="${profile.mobilePhone}" required />
+                </div>
+                <div class="col-md-4">
+                    <label for="landlinePhone" class="form-label">Telefono fisso</label>
+                    <input type="text" class="form-control" id="landlinePhone" name="landlinePhone"
+                           th:value="${profile.landlinePhone}" />
+                </div>
+
+                <div class="col-12 mt-3">
+                    <h6>Residenza</h6>
+                </div>
+                <div class="col-md-6">
+                    <label for="residenceAddress" class="form-label">Indirizzo *</label>
+                    <input type="text" class="form-control" id="residenceAddress" name="residenceAddress"
+                           th:value="${profile.residenceAddress}" required />
+                </div>
+                <div class="col-md-3">
+                    <label for="residenceCity" class="form-label">Città *</label>
+                    <input type="text" class="form-control" id="residenceCity" name="residenceCity"
+                           th:value="${profile.residenceCity}" required />
+                </div>
+                <div class="col-md-3">
+                    <label for="residenceZip" class="form-label">CAP *</label>
+                    <input type="text" class="form-control" id="residenceZip" name="residenceZip" maxlength="10"
+                           th:value="${profile.residenceZip}" required />
+                </div>
+                <div class="col-md-3">
+                    <label for="residenceProvince" class="form-label">Provincia *</label>
+                    <input type="text" class="form-control" id="residenceProvince" name="residenceProvince" maxlength="2"
+                           th:value="${profile.residenceProvince}" required />
+                </div>
+                <div class="col-md-3">
+                    <label for="residenceCountry" class="form-label">Nazione *</label>
+                    <input type="text" class="form-control" id="residenceCountry" name="residenceCountry"
+                           th:value="${profile.residenceCountry}" required />
+                </div>
+
+                <div class="col-12 mt-3">
+                    <h6>Domicilio (se diverso)</h6>
+                </div>
+                <div class="col-md-6">
+                    <label for="domicileAddress" class="form-label">Indirizzo</label>
+                    <input type="text" class="form-control" id="domicileAddress" name="domicileAddress"
+                           th:value="${profile.domicileAddress}" />
+                </div>
+                <div class="col-md-3">
+                    <label for="domicileCity" class="form-label">Città</label>
+                    <input type="text" class="form-control" id="domicileCity" name="domicileCity"
+                           th:value="${profile.domicileCity}" />
+                </div>
+                <div class="col-md-3">
+                    <label for="domicileZip" class="form-label">CAP</label>
+                    <input type="text" class="form-control" id="domicileZip" name="domicileZip" maxlength="10"
+                           th:value="${profile.domicileZip}" />
+                </div>
+                <div class="col-md-3">
+                    <label for="domicileProvince" class="form-label">Provincia</label>
+                    <input type="text" class="form-control" id="domicileProvince" name="domicileProvince" maxlength="2"
+                           th:value="${profile.domicileProvince}" />
+                </div>
+                <div class="col-md-3">
+                    <label for="domicileCountry" class="form-label">Nazione</label>
+                    <input type="text" class="form-control" id="domicileCountry" name="domicileCountry"
+                           th:value="${profile.domicileCountry}" />
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Dati fiscali</div>
+            <div class="card-body row g-3">
+                <div class="col-md-4">
+                    <label for="vatNumber" class="form-label">Partita IVA</label>
+                    <input type="text" class="form-control" id="vatNumber" name="vatNumber" maxlength="11"
+                           th:value="${profile.vatNumber}" />
+                </div>
+                <div class="col-md-4">
+                    <label for="taxRegime" class="form-label">Regime fiscale *</label>
+                    <input type="text" class="form-control" id="taxRegime" name="taxRegime"
+                           th:value="${profile.taxRegime}" required />
+                </div>
+                <div class="col-md-4">
+                    <label for="pecEmail" class="form-label">PEC *</label>
+                    <input type="email" class="form-control" id="pecEmail" name="pecEmail"
+                           th:value="${profile.pecEmail}" required />
+                </div>
+                <div class="col-md-4">
+                    <label for="sdiCode" class="form-label">Codice SDI</label>
+                    <input type="text" class="form-control" id="sdiCode" name="sdiCode" maxlength="7"
+                           th:value="${profile.sdiCode}" />
+                </div>
+
+                <div class="col-12 mt-3">
+                    <h6>Indirizzo fiscale (se diverso da residenza)</h6>
+                </div>
+                <div class="col-md-6">
+                    <label for="taxAddress" class="form-label">Indirizzo</label>
+                    <input type="text" class="form-control" id="taxAddress" name="taxAddress"
+                           th:value="${profile.taxAddress}" />
+                </div>
+                <div class="col-md-3">
+                    <label for="taxCity" class="form-label">Città</label>
+                    <input type="text" class="form-control" id="taxCity" name="taxCity"
+                           th:value="${profile.taxCity}" />
+                </div>
+                <div class="col-md-3">
+                    <label for="taxZip" class="form-label">CAP</label>
+                    <input type="text" class="form-control" id="taxZip" name="taxZip" maxlength="10"
+                           th:value="${profile.taxZip}" />
+                </div>
+                <div class="col-md-3">
+                    <label for="taxProvince" class="form-label">Provincia</label>
+                    <input type="text" class="form-control" id="taxProvince" name="taxProvince" maxlength="2"
+                           th:value="${profile.taxProvince}" />
+                </div>
+                <div class="col-md-3">
+                    <label for="taxCountry" class="form-label">Nazione</label>
+                    <input type="text" class="form-control" id="taxCountry" name="taxCountry"
+                           th:value="${profile.taxCountry}" />
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mb-5">
+            <button type="submit" class="btn btn-primary">Salva profilo</button>
+        </div>
+    </form>
+</div>
+
+<script th:src="@{/webjars/bootstrap/5.0.2/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/professional-profile.js}"></script>
+</body>
+</html>
