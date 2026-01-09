@@ -1,32 +1,25 @@
-import express from 'express';
+import express, { Application, Request, Response, NextFunction } from 'express';
 import bodyParser from 'body-parser';
 import professionalProfileRoutes from './routes/professionalProfileRoutes';
-import { HttpError } from './utils/errors';
 
-const app = express();
+export function createApp(): Application {
+  const app = express();
+  app.use(bodyParser.json());
 
-app.use(bodyParser.json());
+  // Middleware di autenticazione fittizio per test/demo: legge X-User-Id
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    const userId = req.header('X-User-Id');
+    if (userId) {
+      (req as any).user = { id: userId };
+    }
+    next();
+  });
 
-// Middleware mock autenticazione per test (in reale progetto si usa quello esistente)
-app.use((req, _res, next) => {
-  const anyReq = req as any;
-  if (!anyReq.user) {
-    // mock user id=1
-    anyReq.user = { id: 1 };
-  }
-  next();
-});
+  app.use(professionalProfileRoutes);
 
-app.use('/api', professionalProfileRoutes);
+  app.get('/health', (_req: Request, res: Response) => {
+    res.json({ status: 'ok' });
+  });
 
-app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  if (err instanceof HttpError) {
-    res.status(err.status).json({ error: { code: err.code, details: err.details || null } });
-    return;
-  }
-  // eslint-disable-next-line no-console
-  console.error(err);
-  res.status(500).json({ error: { code: 'server.error' } });
-});
-
-export default app;
+  return app;
+}
