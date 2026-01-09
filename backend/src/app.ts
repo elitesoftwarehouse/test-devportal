@@ -1,16 +1,29 @@
-import express from "express";
-import bodyParser from "body-parser";
-import cors from "cors";
-import companyOnboardingRoutes from "./routes/companyOnboarding.routes";
-// ... altri import esistenti
+import express, { Application } from 'express';
+import { json } from 'body-parser';
+import { DataSource } from 'typeorm';
+import { accreditamentoRouter } from './routes/accreditamento/accreditamento.controller';
+import { testingRouter } from './routes/testing';
 
-const app = express();
+interface CreateAppOptions {
+  dataSource: DataSource;
+  enableGraphql?: boolean;
+}
 
-app.use(cors());
-app.use(bodyParser.json());
+export async function createApp(options: CreateAppOptions): Promise<Application> {
+  const app = express();
+  app.use(json());
 
-// ... altre route esistenti
-app.use("/api", companyOnboardingRoutes);
+  app.use((req, _res, next) => {
+    (req as any).dataSource = options.dataSource;
+    next();
+  });
 
-// ... export / error handler esistenti
-export default app;
+  app.use('/api/accreditamento', accreditamentoRouter);
+  app.use('/api/testing', testingRouter);
+
+  if (options.enableGraphql) {
+    // Qui verrebbe montato il server GraphQL secondo le convenzioni esistenti
+  }
+
+  return app;
+}
