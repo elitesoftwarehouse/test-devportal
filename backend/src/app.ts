@@ -1,29 +1,31 @@
-import express, { Application } from 'express';
-import { json } from 'body-parser';
-import { DataSource } from 'typeorm';
-import { accreditamentoRouter } from './routes/accreditamento/accreditamento.controller';
-import { testingRouter } from './routes/testing';
+import express from 'express';
+import bodyParser from 'body-parser';
+import { Pool } from 'pg';
+import { createExternalCollaboratorInvitationRouter } from './modules/external-collaborators/http/ExternalCollaboratorInvitationController';
+import { ExternalCollaboratorInvitationService } from './modules/external-collaborators/services/ExternalCollaboratorInvitationService';
+import { ExternalCollaboratorInvitationRepository } from './modules/external-collaborators/repositories/ExternalCollaboratorInvitationRepository';
+import { Logger } from './shared/logger/Logger';
+import { MailerService } from './shared/mailer/MailerService';
 
-interface CreateAppOptions {
-  dataSource: DataSource;
-  enableGraphql?: boolean;
-}
+const app = express();
+app.use(bodyParser.json());
 
-export async function createApp(options: CreateAppOptions): Promise<Application> {
-  const app = express();
-  app.use(json());
+// Inizializzazione dipendenze condivise (mock/dummy o reali, in linea con il progetto esistente)
+const dbPool = new Pool();
+const logger = new Logger();
+const mailerService = new MailerService(logger, process.env);
 
-  app.use((req, _res, next) => {
-    (req as any).dataSource = options.dataSource;
-    next();
-  });
+const externalCollaboratorInvitationRepository = new ExternalCollaboratorInvitationRepository(dbPool);
+const externalCollaboratorInvitationService = new ExternalCollaboratorInvitationService({
+  mailerService,
+  invitationRepository: externalCollaboratorInvitationRepository,
+  logger,
+  env: process.env
+});
 
-  app.use('/api/accreditamento', accreditamentoRouter);
-  app.use('/api/testing', testingRouter);
+app.use(
+  '/api',
+  createExternalCollaboratorInvitationRouter(externalCollaboratorInvitationService)
+);
 
-  if (options.enableGraphql) {
-    // Qui verrebbe montato il server GraphQL secondo le convenzioni esistenti
-  }
-
-  return app;
-}
+export default app;

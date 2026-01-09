@@ -1,59 +1,34 @@
-import axios from 'axios';
-
-const API_BASE_URL = '/api';
-
-export interface CreateExternalInvitationPayload {
+export interface InviteExternalCollaboratorPayload {
   email: string;
-  firstName?: string;
-  lastName?: string;
-  message?: string;
-  companyId: string;
+  externalOwnerId: string;
+  externalOwnerName: string;
+  externalOwnerCompanyName: string;
+  externalOwnerSupportEmail?: string;
+  locale?: string;
 }
 
-export interface ExternalInvitationSummary {
-  id: string;
-  email: string;
-  status: string;
+export interface InviteExternalCollaboratorResponse {
+  invitationId: string;
+  invitedEmail: string;
   expiresAt: string;
-  companyId: string;
 }
 
-export interface InvitationDetails {
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  companyName: string;
-  expiresAt: string;
-  status: string;
-}
+export const inviteExternalCollaborator = async (
+  payload: InviteExternalCollaboratorPayload
+): Promise<InviteExternalCollaboratorResponse> => {
+  const response = await fetch('/api/external-collaborators/invitations', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
 
-export async function createExternalCollaboratorInvitation(
-  payload: CreateExternalInvitationPayload
-): Promise<ExternalInvitationSummary> {
-  const response = await axios.post(`${API_BASE_URL}/external-collaborators/invitations`, payload);
-  return response.data;
-}
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    const errorCode = errorBody?.error || 'UNKNOWN_ERROR';
+    throw new Error(errorCode);
+  }
 
-export async function getExternalInvitationDetails(token: string): Promise<InvitationDetails> {
-  const response = await axios.get(`${API_BASE_URL}/external-collaborators/invitations/${token}`);
-  return response.data;
-}
-
-export interface CompleteInvitationPayload {
-  password: string;
-  firstName: string;
-  lastName: string;
-  acceptPrivacy: boolean;
-  acceptTerms: boolean;
-}
-
-export async function completeExternalInvitation(
-  token: string,
-  payload: CompleteInvitationPayload
-): Promise<any> {
-  const response = await axios.post(
-    `${API_BASE_URL}/external-collaborators/invitations/${token}/accept`,
-    payload
-  );
-  return response.data;
-}
+  return (await response.json()) as InviteExternalCollaboratorResponse;
+};
