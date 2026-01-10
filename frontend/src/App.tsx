@@ -1,21 +1,14 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import ExternalCollaboratorInvitationsPage from './components/ExternalCollaborators/ExternalCollaboratorInvitationsPage';
-import UnifiedProfilesView from './components/profiles/UnifiedProfilesView';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import ResourceSearchPage from './components/resources/ResourceSearchPage';
 
 const App: React.FC = () => {
-  // Integrazione di base: si può collegare al contesto auth del portale
-  const currentUserRole: 'ADMIN' | 'USER' = 'ADMIN';
-
   return (
     <Router>
-      <div className="app-root">
-        <Routes>
-          <Route path="/external-collaborators/invitations" element={<ExternalCollaboratorInvitationsPage />} />
-          <Route path="/profiles" element={<UnifiedProfilesView currentUserRole={currentUserRole} />} />
-          <Route path="/" element={<UnifiedProfilesView currentUserRole={currentUserRole} />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route path="/resources/search" element={<ResourceSearchPage />} />
+        <Route path="*" element={<Navigate to="/resources/search" replace />} />
+      </Routes>
     </Router>
   );
 };

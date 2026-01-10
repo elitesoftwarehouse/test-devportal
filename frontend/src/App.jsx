@@ -1,15 +1,13 @@
 import React from 'react';
-import { FirstAccreditationForm } from './components/FirstAccreditation/FirstAccreditationForm';
-import CompanyCollaboratorsModelDoc from './components/companies/CompanyCollaboratorsModelDoc';
+import ResourceSearch from './components/ResourceSearch';
+import './styles/resourceSearch.css';
 
-const App = () => {
+function App() {
   return (
-    <div>
-      <FirstAccreditationForm />
-      {/* Altre sezioni dell'applicazione Elite Portal */}
-      <CompanyCollaboratorsModelDoc />
+    <div className="app-root">
+      <ResourceSearch />
     </div>
   );
-};
+}
 
 export default App;
