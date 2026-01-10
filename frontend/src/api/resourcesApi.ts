@@ -1,37 +1,59 @@
 import axios, { AxiosResponse } from 'axios';
 
+export interface ResourceSkillDto {
+  id: number;
+  name: string;
+  level: string | null;
+  yearsExperience: number | null;
+  category: string | null;
+  tags: string[];
+}
+
 export interface ResourceCvDto {
   id: number;
-  fileName: string | null;
-  mimeType: string | null;
-  downloadUrl: string; // Deve essere coerente con l'endpoint backend /api/resources/{id}/cvs/{cvId}/download
+  title: string;
+  fileName: string;
+  language: string | null;
+  updatedAt: string;
+  format: string | null;
+  isPrimary: boolean;
 }
 
 export interface ResourceDetailDto {
   id: number;
   fullName: string;
-  role: string;
+  role: string | null;
+  seniority: string | null;
+  company: string | null;
+  status: string | null;
+  skills: ResourceSkillDto[];
   cvs: ResourceCvDto[];
 }
 
-const apiClient = axios.create({
-  baseURL: '/api',
-  withCredentials: true
-});
-
-export async function getResourceDetail(resourceId: number): Promise<ResourceDetailDto> {
-  const response: AxiosResponse<ResourceDetailDto> = await apiClient.get(`/resources/${resourceId}`);
+export async function fetchResourceDetail(id: string | number): Promise<ResourceDetailDto> {
+  const response: AxiosResponse<ResourceDetailDto> = await axios.get(`/api/resources/${id}`);
   return response.data;
 }
 
-export async function downloadResourceCv(resourceId: number, cvId: number): Promise<Blob> {
-  const response: AxiosResponse<Blob> = await apiClient.get(`/resources/${resourceId}/cvs/${cvId}/download`, {
-    responseType: 'blob'
-  });
-  return response.data;
-}
+export async function downloadResourceCv(resourceId: number | string, cvId: number | string): Promise<void> {
+  const url = `/api/resources/${resourceId}/cv/${cvId}/download`;
+  const response = await axios.get(url, { responseType: 'blob' });
 
-export default {
-  getResourceDetail,
-  downloadResourceCv
-};
+  const disposition = response.headers['content-disposition'];
+  let fileName = 'cv';
+  if (disposition) {
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+    if (match && match[1]) {
+      fileName = decodeURIComponent(match[1]);
+    }
+  }
+
+  const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.setAttribute('download', fileName);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(blobUrl);
+}
