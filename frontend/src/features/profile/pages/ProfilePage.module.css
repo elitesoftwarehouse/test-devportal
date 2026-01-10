@@ -1,0 +1,167 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: var(--space-6);
+}
+
+.title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Form Grid */
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+/* CV Grid */
+.cvGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .cvGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* CV Info */
+.cvInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+  border-radius: var(--radius-lg);
+}
+
+.cvFile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.cvIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-radius: var(--radius-md);
+}
+
+.cvDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.cvName {
+  font-weight: var(--font-medium);
+  color: var(--color-text);
+}
+
+.cvDate {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.cvActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Upload Area */
+.uploadArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-8);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.uploadArea p {
+  margin: 0;
+}
+
+/* Skills */
+.skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.addSkillBtn {
+  margin-top: var(--space-2);
+}
+
+/* Documents */
+.documentsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.documentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+  border-radius: var(--radius-lg);
+}
+
+.documentInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.documentIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-md);
+  border: var(--border-width) solid var(--color-border);
+}
+
+.documentName {
+  display: block;
+  font-weight: var(--font-medium);
+  color: var(--color-text);
+}
+
+.documentStatus {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
