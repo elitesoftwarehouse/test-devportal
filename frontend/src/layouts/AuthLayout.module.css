@@ -1,0 +1,96 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Left branding panel */
+.branding {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 50%;
+  padding: var(--space-12);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: var(--color-text-inverse);
+}
+
+@media (min-width: 1024px) {
+  .branding {
+    display: flex;
+  }
+}
+
+.brandingContent {
+  max-width: 480px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  color: var(--color-accent);
+  margin-bottom: var(--space-8);
+}
+
+.title {
+  font-size: var(--text-4xl);
+  font-weight: var(--font-bold);
+  margin: 0 0 var(--space-4) 0;
+  letter-spacing: var(--tracking-tight);
+}
+
+.subtitle {
+  font-size: var(--text-lg);
+  opacity: 0.9;
+  margin: 0 0 var(--space-10) 0;
+  line-height: var(--leading-relaxed);
+}
+
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--text-base);
+  opacity: 0.85;
+}
+
+.feature svg {
+  flex-shrink: 0;
+  color: var(--color-accent-light);
+}
+
+.copyright {
+  font-size: var(--text-sm);
+  opacity: 0.6;
+  margin: 0;
+}
+
+/* Right form panel */
+.formPanel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  background-color: var(--color-bg);
+}
+
+.formContainer {
+  width: 100%;
+  max-width: 420px;
+}
+
+@media (min-width: 1024px) {
+  .formPanel {
+    width: 50%;
+  }
+}
+

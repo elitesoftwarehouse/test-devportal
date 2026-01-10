@@ -1,0 +1,76 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Toolbar */
+.toolbar {
+  padding: var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-border-light);
+}
+
+.searchInput {
+  max-width: 400px;
+}
+
+/* Tabs */
+.tabsWrapper {
+  padding: 0 var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-border-light);
+}
+
+.tabsWrapper > div {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+/* Order cells */
+.orderTitle {
+  font-weight: var(--font-medium);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.orderTitle:hover {
+  color: var(--color-accent);
+}
+
+.clientInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.client {
+  font-weight: var(--font-medium);
+  color: var(--color-text);
+}
+
+.project {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.dates {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+

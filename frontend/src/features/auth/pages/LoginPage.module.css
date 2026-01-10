@@ -1,0 +1,72 @@
+.container {
+  width: 100%;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.card {
+  margin-bottom: var(--space-6);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger-dark);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+}
+
+.forgotPassword {
+  text-align: right;
+  margin-top: calc(-1 * var(--space-2));
+}
+
+.forgotPassword a {
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+}
+
+.forgotPassword a:hover {
+  text-decoration: underline;
+}
+
+.registerLink {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.registerLink a {
+  color: var(--color-accent);
+  font-weight: var(--font-medium);
+}
+
+.registerLink a:hover {
+  text-decoration: underline;
+}
+

@@ -1,0 +1,170 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Toolbar */
+.toolbar {
+  padding: var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-border-light);
+}
+
+.searchInput {
+  max-width: 400px;
+}
+
+/* Tabs */
+.tabsWrapper {
+  padding: 0 var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-border-light);
+}
+
+.tabsWrapper > div {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+/* Table cells */
+.invoiceNumber {
+  font-weight: var(--font-medium);
+  font-family: var(--font-family-mono);
+  color: var(--color-text);
+}
+
+.amount {
+  font-weight: var(--font-semibold);
+  color: var(--color-text);
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.actionBtn:hover {
+  color: var(--color-text);
+  background-color: var(--color-bg-alt);
+}
+
+/* Upload Form */
+.uploadForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.uploadArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.uploadArea p {
+  margin: 0;
+}
+
+.uploadHint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+
+/* Orders selection */
+.ordersSelection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ordersLabel {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-text);
+}
+
+.ordersList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background-color: var(--color-bg);
+  border-radius: var(--radius-lg);
+}
+
+.orderCheckbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.orderCheckbox:hover {
+  background-color: var(--color-surface);
+}
+
+.orderCheckbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+}
+
+.orderCheckbox span:first-of-type {
+  flex: 1;
+  font-weight: var(--font-medium);
+}
+
+.orderClient {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
