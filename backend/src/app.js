@@ -1,18 +1,18 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import bodyParser from 'body-parser';
 
-// Import router esistenti (placeholder: mantenere quelli già presenti nel progetto)
-// import authRouter from './routes/authRoute.js';
-// import otherRouters from './routes/...';
-
+// Import router esistenti
 import authMeRoute from './routes/authMeRoute.js';
+const profileUnifiedRoutes = require('./routes/profileUnifiedRoutes');
 
 const app = express();
 
 // Middleware globali
 app.use(express.json());
 app.use(cookieParser());
+app.use(bodyParser.json());
 
 // Configurazione CORS: assicurarsi che corrisponda a quella già definita nel progetto.
 // L'opzione credentials: true è fondamentale per inviare i cookie (sessione) dal frontend.
@@ -23,14 +23,20 @@ app.use(
   })
 );
 
-// Registrazione router esistenti
-// app.use('/auth', authRouter);
-// app.use('/api', otherRouters);
+// Middleware per simulare l'utente loggato (solo per sviluppo)
+app.use((req, res, next) => {
+  // In produzione questo verrebbe da un sistema di auth/JWT
+  if (!req.user) {
+    req.user = { id: 'u1', role: process.env.MOCK_ROLE || 'ADMIN' };
+  }
+  next();
+});
 
-// Nuovo endpoint /auth/me (coerente con la story)
+// Registrazione router
 app.use('/auth', authMeRoute);
+app.use('/api/profiles', profileUnifiedRoutes);
 
-// Gestione errori base (mantenere coerente con implementazione esistente)
+// Gestione errori base
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);

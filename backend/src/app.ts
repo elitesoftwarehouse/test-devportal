@@ -1,4 +1,5 @@
-import express from 'express';
+import express, { Application } from 'express';
+import cors from 'cors';
 import bodyParser from 'body-parser';
 import { Pool } from 'pg';
 import { ExternalCollaboratorInvitationRepository } from './repositories/ExternalCollaboratorInvitationRepository';
@@ -7,8 +8,11 @@ import { ExternalCollaboratorInvitationService } from './services/ExternalCollab
 import { createExternalCollaboratorsRouter } from './api/routes/externalCollaborators';
 import { AuthorizationService } from './services/AuthorizationService';
 import { Mailer } from './services/Mailer';
+import profileQualityRouter from './routes/profileQuality.routes';
 
-const app = express();
+const app: Application = express();
+
+app.use(cors());
 app.use(bodyParser.json());
 
 // Integrazione con pool DB esistente (configurazione da env)
@@ -21,7 +25,6 @@ const authorizationService = new AuthorizationService(userRepository);
 const mailer: Mailer = {
   async sendExternalCollaboratorInvitation({ to, token, companyId }) {
     // Implementazione reale delegata al mailer esistente.
-    // Qui solo un placeholder per completezza.
     console.log('Sending invitation email', { to, token, companyId });
   },
 };
@@ -40,6 +43,16 @@ app.use((req, _res, next) => {
   next();
 });
 
+// External Collaborators API
 app.use('/api', createExternalCollaboratorsRouter(invitationService));
 
+// Profile Quality API
+app.use('/api/profile-quality', profileQualityRouter);
+
+// Healthcheck di base
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok' });
+});
+
 export { app };
+export default app;
