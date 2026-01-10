@@ -1,50 +1,37 @@
 import axios, { AxiosResponse } from 'axios';
 
-export interface ResourceSkillSummaryDto {
+export interface ResourceCvDto {
   id: number;
-  code: string;
-  name: string;
+  fileName: string | null;
+  mimeType: string | null;
+  downloadUrl: string; // Deve essere coerente con l'endpoint backend /api/resources/{id}/cvs/{cvId}/download
 }
 
-export interface ResourceSearchItemDto {
+export interface ResourceDetailDto {
   id: number;
-  firstName: string;
-  lastName: string;
   fullName: string;
-  role: {
-    id: number;
-    name: string;
-  } | null;
-  skills: ResourceSkillSummaryDto[];
+  role: string;
+  cvs: ResourceCvDto[];
 }
 
-export interface PagedResult<T> {
-  items: T[];
-  page: number;
-  pageSize: number;
-  totalItems: number;
-  totalPages: number;
-}
+const apiClient = axios.create({
+  baseURL: '/api',
+  withCredentials: true
+});
 
-export interface ResourceSearchParams {
-  name?: string;
-  roleId?: number;
-  roles?: number[];
-  skills?: string[];
-  page?: number;
-  pageSize?: number;
-  sortBy?: 'name';
-  sortDirection?: 'asc' | 'desc';
-}
-
-export async function searchResources(
-  params: ResourceSearchParams
-): Promise<PagedResult<ResourceSearchItemDto>> {
-  const response: AxiosResponse<PagedResult<ResourceSearchItemDto>> = await axios.get(
-    '/api/resources/search',
-    {
-      params,
-    }
-  );
+export async function getResourceDetail(resourceId: number): Promise<ResourceDetailDto> {
+  const response: AxiosResponse<ResourceDetailDto> = await apiClient.get(`/resources/${resourceId}`);
   return response.data;
 }
+
+export async function downloadResourceCv(resourceId: number, cvId: number): Promise<Blob> {
+  const response: AxiosResponse<Blob> = await apiClient.get(`/resources/${resourceId}/cvs/${cvId}/download`, {
+    responseType: 'blob'
+  });
+  return response.data;
+}
+
+export default {
+  getResourceDetail,
+  downloadResourceCv
+};
