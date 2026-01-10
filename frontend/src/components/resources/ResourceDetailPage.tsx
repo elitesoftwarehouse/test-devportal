@@ -1,131 +1,118 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import resourcesApi, { ResourceDetailDto, ResourceCvDto } from '../../api/resourcesApi';
+import { fetchResourceDetail, downloadResourceCv, ResourceDetailDTO, ResourceCvDTO } from '../../api/resourcesApi';
 
-interface RouteParams {
-  id: string;
+interface ResourceDetailPageProps {
+  resourceId: string;
 }
 
-const ResourceDetailPage: React.FC = () => {
-  const { id } = useParams<RouteParams>();
-  const resourceId = Number(id);
-
-  const [resource, setResource] = useState<ResourceDetailDto | null>(null);
+export const ResourceDetailPage: React.FC<ResourceDetailPageProps> = ({ resourceId }) => {
+  const [resource, setResource] = useState<ResourceDetailDTO | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await resourcesApi.getResourceDetail(resourceId);
-        if (isMounted) {
+    let mounted = true;
+    setLoading(true);
+    setError(null);
+
+    fetchResourceDetail(resourceId)
+      .then((data) => {
+        if (mounted) {
           setResource(data);
         }
-      } catch (err: any) {
-        if (isMounted) {
-          setError('Impossibile caricare i dettagli della risorsa.');
+      })
+      .catch(() => {
+        if (mounted) {
+          setError('Errore nel caricamento della risorsa');
         }
-      } finally {
-        if (isMounted) {
+      })
+      .finally(() => {
+        if (mounted) {
           setLoading(false);
         }
-      }
-    }
-
-    if (!Number.isNaN(resourceId)) {
-      load();
-    } else {
-      setLoading(false);
-      setError('Identificativo risorsa non valido.');
-    }
+      });
 
     return () => {
-      isMounted = false;
+      mounted = false;
     };
   }, [resourceId]);
 
-  const handleDownload = async (cv: ResourceCvDto) => {
-    if (!resource) return;
+  const handleDownload = async (cv: ResourceCvDTO) => {
     try {
       setDownloadingId(cv.id);
-      const blob = await resourcesApi.downloadResourceCv(resource.id, cv.id);
+      const blob = await downloadResourceCv(resourceId, cv.id);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const fileName = cv.fileName || `cv-${cv.id}.pdf`;
-      a.download = fileName;
+      a.download = cv.fileName;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-    } catch (err: any) {
-      // In un sistema reale potremmo usare una notifica globale
-      // eslint-disable-next-line no-alert
-      alert('Errore durante il download del CV. Verifica i permessi o riprova più tardi.');
+    } catch (e) {
+      setError('Errore nel download del CV');
     } finally {
       setDownloadingId(null);
     }
   };
 
   if (loading) {
-    return <div className="resource-detail-page">Caricamento dettagli risorsa...</div>;
+    return <div className="resource-detail resource-detail--loading">Caricamento...</div>;
   }
 
   if (error) {
-    return <div className="resource-detail-page error">{error}</div>;
+    return <div className="resource-detail resource-detail--error">{error}</div>;
   }
 
   if (!resource) {
-    return <div className="resource-detail-page">Risorsa non trovata.</div>;
+    return <div className="resource-detail resource-detail--empty">Risorsa non trovata</div>;
   }
 
   return (
-    <div className="resource-detail-page">
-      <h1 className="resource-detail-title">Dettaglio risorsa</h1>
-      <div className="resource-detail-card">
-        <div className="resource-detail-header">
-          <h2>{resource.fullName}</h2>
-          <div className="resource-role">{resource.role}</div>
-        </div>
+    <div className="resource-detail">
+      <div className="resource-detail__header">
+        <h1>
+          {resource.firstName} {resource.lastName}
+        </h1>
+        <p className="resource-detail__role">{resource.role || 'Ruolo non specificato'}</p>
+        <p className="resource-detail__email">{resource.email}</p>
+      </div>
 
-        <section className="resource-cv-section">
-          <h3>Curriculum disponibili</h3>
-          {resource.cvs && resource.cvs.length > 0 ? (
-            <table className="resource-cv-table">
-              <thead>
-                <tr>
-                  <th>Nome file</th>
-                  <th>Formato</th>
-                  <th>Azioni</th>
+      <div className="resource-detail__section">
+        <h2>CV disponibili</h2>
+        {resource.cvs.length === 0 ? (
+          <p className="resource-detail__empty-cv">Nessun CV associato a questa risorsa.</p>
+        ) : (
+          <table className="resource-detail__cv-table">
+            <thead>
+              <tr>
+                <th>Nome file</th>
+                <th>Creato il</th>
+                <th>Aggiornato il</th>
+                <th>Azioni</th>
+              </tr>
+            </thead>
+            <tbody>
+              {resource.cvs.map((cv) => (
+                <tr key={cv.id}>
+                  <td>{cv.fileName}</td>
+                  <td>{new Date(cv.createdAt).toLocaleString()}</td>
+                  <td>{new Date(cv.updatedAt).toLocaleString()}</td>
+                  <td>
+                    <button
+                      className="resource-detail__download-btn"
+                      onClick={() => handleDownload(cv)}
+                      disabled={downloadingId === cv.id}
+                    >
+                      {downloadingId === cv.id ? 'Download in corso...' : 'Download'}
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {resource.cvs.map((cv) => (
-                  <tr key={cv.id}>
-                    <td>{cv.fileName || `CV #${cv.id}`}</td>
-                    <td>{cv.mimeType || '-'}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-sm"
-                        onClick={() => handleDownload(cv)}
-                        disabled={downloadingId === cv.id}
-                      >
-                        {downloadingId === cv.id ? 'Download in corso...' : 'Download CV'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>Nessun CV associato a questa risorsa.</p>
-          )}
-        </section>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
