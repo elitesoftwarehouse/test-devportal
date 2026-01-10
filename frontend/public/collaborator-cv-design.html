@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Design gestione CV collaboratori</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/css/collaborator-cv-design.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+      <span class="navbar-brand">Elite Portal - Design Gestione CV Collaboratori</span>
+    </div>
+  </nav>
+
+  <main class="container mb-5">
+    <section class="mb-4">
+      <h1 class="h3">Modello dati CollaboratorCV</h1>
+      <p class="text-muted">Questa pagina documenta il modello dati e le regole di business per la gestione dei CV dei collaboratori, da implementare nel backend Java/Spring.</p>
+
+      <div class="card mb-3">
+        <div class="card-header">Struttura tabella <code>collaborator_cv</code></div>
+        <div class="card-body">
+          <pre class="mb-0 small"><code>id                UUID (PK)
+collaborator_id   UUID (FK verso tabella anagrafica collaboratori)
+file_name_originale VARCHAR(255)
+file_path         TEXT (chiave di storage, es. collaborators/{collaboratorId}/{timestamp}_{nomeSanificato}.pdf)
+mime_type         VARCHAR(100)
+dimensione        BIGINT (byte)
+data_caricamento  TIMESTAMP WITH TIME ZONE
+caricatore_user_id UUID (FK verso utenti)
+note              TEXT NULL
+flag_is_corrente  BOOLEAN NOT NULL DEFAULT false
+flag_is_deleted   BOOLEAN NOT NULL DEFAULT false
+data_eliminazione TIMESTAMP WITH TIME ZONE NULL
+eliminatore_user_id UUID NULL</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">Strategia di storage file</h2>
+      <ul>
+        <li><strong>Storage suggerito:</strong> filesystem server applicativo o volume di rete già utilizzato dalla piattaforma.</li>
+        <li><strong>Directory base configurabile:</strong> proprietà di configurazione (es. <code>eliteportal.cv.storage.base-path</code>).</li>
+        <li><strong>Nomenclatura file:</strong> <code>collaborators/{collaboratorId}/{timestamp}_{nomeSanificato}.pdf</code>.</li>
+        <li><strong>Sanificazione nome:</strong> rimozione caratteri speciali, sostituzione spazi con underscore, normalizzazione in minuscolo.</li>
+      </ul>
+      <p class="mb-0"><strong>Esempio:</strong> collaboratore <code>3f2a...</code>, upload di <code>CV Mario Rossi 2024.pdf</code> il 2024‑05‑10 09:15:33 genera<br /><code>collaborators/3f2a.../20240510T091533_CV_mario_rossi_2024.pdf</code></p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">Vincoli di versione e regole di aggiornamento</h2>
+      <ul>
+        <li>Per ogni collaboratore può esistere <strong>al più un CV corrente</strong> (<code>flag_is_corrente = true and flag_is_deleted = false</code>).</li>
+        <li>In caso di nuovo caricamento:
+          <ul>
+            <li>tutti i CV non eliminati del collaboratore hanno <code>flag_is_corrente</code> impostato a <code>false</code>;</li>
+            <li>il nuovo record viene creato con <code>flag_is_corrente = true</code>.</li>
+          </ul>
+        </li>
+        <li>In caso di sostituzione di un CV specifico:
+          <ul>
+            <li>il CV sostituito rimane <strong>storico</strong> (<code>flag_is_corrente = false</code>, <code>flag_is_deleted = false</code>);</li>
+            <li>il nuovo CV viene inserito come corrente.</li>
+          </ul>
+        </li>
+        <li>In caso di eliminazione logica:
+          <ul>
+            <li>vengono valorizzati <code>flag_is_deleted = true</code>, <code>data_eliminazione</code> ed <code>eliminatore_user_id</code>;</li>
+            <li>il file fisico viene <strong>mantenuto</strong> a storage (policy di cleanup demandata a processi offline);</li>
+            <li>se il CV eliminato era corrente, il collaboratore può rimanere temporaneamente senza CV corrente.</li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">API previste (bozza)</h2>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Metodo</th>
+              <th>Path</th>
+              <th>Descrizione</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>POST</code></td>
+              <td><code>/admin/collaborators/{id}/cv</code></td>
+              <td>Upload nuovo CV (multipart/form-data). Imposta il nuovo CV come corrente, mantiene gli storici.</td>
+            </tr>
+            <tr>
+              <td><code>POST</code></td>
+              <td><code>/admin/collaborators/{id}/cv/{cvId}/replace</code></td>
+              <td>Sostituzione di un CV specifico: il vecchio diventa storico, il nuovo è corrente.</td>
+            </tr>
+            <tr>
+              <td><code>DELETE</code></td>
+              <td><code>/admin/collaborators/{id}/cv/{cvId}</code></td>
+              <td>Eliminazione logica del CV, mantenendo il file.</td>
+            </tr>
+            <tr>
+              <td><code>GET</code></td>
+              <td><code>/admin/collaborators/{id}/cv</code></td>
+              <td>Elenco CV non eliminati (corrente + storici) per il collaboratore.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">Esempio chiamata mock</h2>
+      <p class="small text-muted">Il pulsante seguente invia una richiesta a un endpoint mock Node/Express (<code>/design</code>) usato solo per verificare il modello durante la fase di analisi.</p>
+      <div class="card">
+        <div class="card-body">
+          <button id="btnTestDesign" class="btn btn-sm btn-outline-primary mb-2">Recupera JSON di design API</button>
+          <pre id="designOutput" class="small bg-light p-2 border" style="min-height: 100px; white-space: pre-wrap;"></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function() {
+      const btn = document.getElementById('btnTestDesign');
+      const output = document.getElementById('designOutput');
+      if (!btn || !output) return;
+      btn.addEventListener('click', async function () {
+        output.textContent = 'Caricamento...';
+        try {
+          const res = await fetch('http://localhost:4005/design/collaborator-cv');
+          if (!res.ok) {
+            output.textContent = 'Errore: ' + res.status + ' ' + res.statusText;
+            return;
+          }
+          const json = await res.json();
+          output.textContent = JSON.stringify(json, null, 2);
+        } catch (err) {
+          output.textContent = 'Errore di rete: ' + (err && err.message ? err.message : String(err));
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

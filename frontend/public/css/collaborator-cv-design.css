@@ -1,0 +1,15 @@
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+pre {
+  background-color: #f8f9fa;
+}
+
+code {
+  font-family: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+h1, h2, h3, h4 {
+  scroll-margin-top: 5rem;
+}
