@@ -1,15 +1,15 @@
 import React from 'react';
-import { CollaboratorCvManager } from './components/collaborators/CollaboratorCvManager';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import ResourceSearchPage from './components/resources/ResourceSearchPage';
 
 const App: React.FC = () => {
-  // Integrazione semplice: in un contesto reale l'ID verrebbe dal routing o dallo stato globale.
-  const sampleCollaboratorId = '11111111-1111-1111-1111-111111111111';
-
   return (
-    <div style={{ padding: '16px' }}>
-      <h2>Elite Portal - Gestione CV Collaboratori</h2>
-      <CollaboratorCvManager collaboratorId={sampleCollaboratorId} />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/resources/search" element={<ResourceSearchPage />} />
+        <Route path="*" element={<Navigate to="/resources/search" replace />} />
+      </Routes>
+    </Router>
   );
 };
 
