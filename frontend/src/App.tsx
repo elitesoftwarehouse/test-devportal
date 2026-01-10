@@ -1,22 +1,15 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import ExternalCollaboratorInvitationsPage from './components/ExternalCollaborators/ExternalCollaboratorInvitationsPage';
-import UnifiedProfilesView from './components/profiles/UnifiedProfilesView';
+import { CollaboratorCvManager } from './components/collaborators/CollaboratorCvManager';
 
 const App: React.FC = () => {
-  // Integrazione di base: si può collegare al contesto auth del portale
-  const currentUserRole: 'ADMIN' | 'USER' = 'ADMIN';
+  // Integrazione semplice: in un contesto reale l'ID verrebbe dal routing o dallo stato globale.
+  const sampleCollaboratorId = '11111111-1111-1111-1111-111111111111';
 
   return (
-    <Router>
-      <div className="app-root">
-        <Routes>
-          <Route path="/external-collaborators/invitations" element={<ExternalCollaboratorInvitationsPage />} />
-          <Route path="/profiles" element={<UnifiedProfilesView currentUserRole={currentUserRole} />} />
-          <Route path="/" element={<UnifiedProfilesView currentUserRole={currentUserRole} />} />
-        </Routes>
-      </div>
-    </Router>
+    <div style={{ padding: '16px' }}>
+      <h2>Elite Portal - Gestione CV Collaboratori</h2>
+      <CollaboratorCvManager collaboratorId={sampleCollaboratorId} />
+    </div>
   );
 };
 
