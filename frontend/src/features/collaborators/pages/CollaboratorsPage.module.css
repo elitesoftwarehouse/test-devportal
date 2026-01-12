@@ -1,0 +1,105 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Toolbar */
+.toolbar {
+  padding: var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-border-light);
+}
+
+.toolbar > * {
+  max-width: 320px;
+}
+
+/* Collaborator info cell */
+.collaboratorInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  border-radius: var(--radius-full);
+}
+
+.name {
+  display: block;
+  font-weight: var(--font-medium);
+  color: var(--color-text);
+}
+
+.email {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.actionBtn:hover {
+  color: var(--color-text);
+  background-color: var(--color-bg-alt);
+}
+
+/* Invite Modal */
+.inviteForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.inviteDescription {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+

@@ -1,0 +1,150 @@
+.container {
+  width: 100%;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Type selection */
+.typeSelection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+@media (min-width: 480px) {
+  .typeSelection {
+    flex-direction: row;
+  }
+}
+
+.typeCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  text-align: center;
+}
+
+.typeCard:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.typeIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  background-color: var(--color-primary-50);
+  color: var(--color-primary);
+  border-radius: var(--radius-xl);
+}
+
+.typeCard h3 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  margin: 0;
+  color: var(--color-text);
+}
+
+.typeCard p {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Form */
+.card {
+  margin-bottom: var(--space-6);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger-dark);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.actions > * {
+  flex: 1;
+}
+
+.loginLink {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.loginLink a {
+  color: var(--color-accent);
+  font-weight: var(--font-medium);
+}
+
+/* Success */
+.successCard {
+  text-align: center;
+}
+
+.successIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto var(--space-4);
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  border-radius: var(--radius-full);
+}
+
+.successCard h2 {
+  font-size: var(--text-xl);
+  margin: 0 0 var(--space-3) 0;
+}
+
+.successCard p {
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-6) 0;
+}
+
